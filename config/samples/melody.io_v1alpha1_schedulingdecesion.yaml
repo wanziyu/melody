@@ -1,0 +1,6 @@
+apiVersion: melody.io.melody.io/v1alpha1
+kind: SchedulingDecesion
+metadata:
+  name: schedulingdecesion-sample
+spec:
+  # TODO(user): Add fields here

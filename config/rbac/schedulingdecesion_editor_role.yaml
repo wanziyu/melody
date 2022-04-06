@@ -1,0 +1,24 @@
+# permissions for end users to edit schedulingdecesions.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: schedulingdecesion-editor-role
+rules:
+- apiGroups:
+  - melody.io.melody.io
+  resources:
+  - schedulingdecesions
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - melody.io.melody.io
+  resources:
+  - schedulingdecesions/status
+  verbs:
+  - get

@@ -1,0 +1,20 @@
+# permissions for end users to view schedulingdecesions.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: schedulingdecesion-viewer-role
+rules:
+- apiGroups:
+  - melody.io.melody.io
+  resources:
+  - schedulingdecesions
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - melody.io.melody.io
+  resources:
+  - schedulingdecesions/status
+  verbs:
+  - get

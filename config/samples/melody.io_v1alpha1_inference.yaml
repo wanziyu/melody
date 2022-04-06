@@ -1,0 +1,6 @@
+apiVersion: melody.io.melody.io/v1alpha1
+kind: Inference
+metadata:
+  name: inference-sample
+spec:
+  # TODO(user): Add fields here
