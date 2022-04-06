@@ -17,6 +17,7 @@ limitations under the License.
 package v1alpha1
 
 import (
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -27,16 +28,57 @@ import (
 type InferenceSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
-
-	// Foo is an example field of Inference. Edit inference_types.go to remove/update
-	Foo string `json:"foo,omitempty"`
+	Domain DomainType `json:"domain,omitempty"`
+	// PredictorStatuses exposes current observed status for each predictor.
+	Servings []ServingSpec `json:"servings"`
 }
+
+type ServingSpec struct {
+	//Name indicates the serving name.
+	Name string `json:"name,omitempty"`
+
+	//ModelPath is the loaded madel filepath in model storage.
+	ModelPath *string `json:"modelPath,omitempty"`
+
+	//ModelVersion specifies the name of target model version to be loaded.
+	ModelVersion string `json:"modelVersion,omitempty"`
+
+	// Replicas specify the expected model serving  replicas.
+	Replicas int32 `json:"replicas,omitempty"`
+
+	BatchSize int32 `json:"batchSize,omitempty"`
+
+	// Template describes a template of predictor pod with its properties.
+	Template corev1.PodTemplateSpec `json:"template"`
+
+	// Scheduling specifies the scheduling algorithm (i.e. DQN) for serving tasks.
+	Scheduling *SchedulingStrategy `json:"autoScale,omitempty"`
+}
+
+type SchedulingStrategy string
+
+const (
+	DQNScheduling     SchedulingStrategy = "DQN"
+	DefaultScheduling SchedulingStrategy = "default"
+)
 
 // InferenceStatus defines the observed state of Inference
 type InferenceStatus struct {
 
-	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
+	// InferenceEndpoints exposes available serving service endpoint.
+	InferenceEndpoint string `json:"inferenceEndpoint,omitempty"`
+
+	ServingStatuses []ServingStatus `json:"servingStatuses,omitempty"`
+}
+
+type ServingStatus struct {
+
+	// Name is the name of current predictor.
+	Name string `json:"name"`
+	// Replicas is the expected replicas of current predictor.
+	Replicas int32 `json:"replicas"`
+	// ReadyReplicas is the ready replicas of current predictor.
+	ReadyReplicas int32 `json:"readyReplicas"`
 }
 
 //+kubebuilder:object:root=true
@@ -59,6 +101,13 @@ type InferenceList struct {
 	metav1.ListMeta `json:"metadata,omitempty"`
 	Items           []Inference `json:"items"`
 }
+
+type DomainType string
+
+const (
+	ImageProcessingDomain DomainType = "image"
+	TimeSeriesDomain      DomainType = "timeseries"
+)
 
 func init() {
 	SchemeBuilder.Register(&Inference{}, &InferenceList{})
