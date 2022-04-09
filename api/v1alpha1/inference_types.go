@@ -79,6 +79,17 @@ type ServingStatus struct {
 	Replicas int32 `json:"replicas"`
 	// ReadyReplicas is the ready replicas of current predictor.
 	ReadyReplicas int32 `json:"readyReplicas"`
+
+	// The time this inference job was started.
+	StartTime *metav1.Time `json:"startTime,omitempty"`
+
+	// The time this inference job was completed.
+	CompletionTime *metav1.Time `json:"completionTime,omitempty"`
+
+	// Status of the condition, one of True, False, Unknown.
+	Status corev1.ConditionStatus `json:"status"`
+
+	Type ServingStatusType `json:"type"`
 }
 
 //+kubebuilder:object:root=true
@@ -107,6 +118,17 @@ type DomainType string
 const (
 	ImageProcessingDomain DomainType = "image"
 	TimeSeriesDomain      DomainType = "timeseries"
+)
+
+type ServingStatusType string
+
+const (
+	ServingRunning   ServingStatusType = "Running"
+	ServingSucceeded ServingStatusType = "Succeeded"
+	ServingFailed    ServingStatusType = "Failed"
+	ServingCreated   ServingStatusType = "Created"
+	ServingPending   ServingStatusType = "Pending"
+	ServingKilled    ServingStatusType = "Killed"
 )
 
 func init() {
