@@ -17,6 +17,7 @@ limitations under the License.
 package v1alpha1
 
 import (
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -28,8 +29,24 @@ type SchedulingDecesionSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
-	// Foo is an example field of SchedulingDecesion. Edit schedulingdecesion_types.go to remove/update
-	Foo string `json:"foo,omitempty"`
+	// Scheduling specifies the scheduling algorithm (i.e. DQN) for serving tasks.
+	Algorithm *SchedulingAlgorithm `json:"algorithm,omitempty"`
+
+	//SchedulingResult specifies
+	Result []SchedulingResult `json:"schedulingResult,omitempty"`
+
+	ResultTime metav1.Time `json:"resultTime"`
+}
+
+type SchedulingAlgorithm string
+
+const (
+	DQNScheduling     SchedulingAlgorithm = "DQN"
+	DefaultScheduling SchedulingAlgorithm = "default"
+)
+
+type SchedulingResult struct {
+	TargetNode corev1.Node `json:"targetNode"`
 }
 
 // SchedulingDecesionStatus defines the observed state of SchedulingDecesion

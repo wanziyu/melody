@@ -50,17 +50,7 @@ type ServingSpec struct {
 
 	// Template describes a template of predictor pod with its properties.
 	Template corev1.PodTemplateSpec `json:"template"`
-
-	// Scheduling specifies the scheduling algorithm (i.e. DQN) for serving tasks.
-	Scheduling *SchedulingStrategy `json:"autoScale,omitempty"`
 }
-
-type SchedulingStrategy string
-
-const (
-	DQNScheduling     SchedulingStrategy = "DQN"
-	DefaultScheduling SchedulingStrategy = "default"
-)
 
 // InferenceStatus defines the observed state of Inference
 type InferenceStatus struct {
