@@ -29,7 +29,7 @@ type SchedulingDecesionSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
-	// Scheduling specifies the scheduling algorithm (i.e. DQN) for serving tasks.
+	// Algorithm specifies the scheduling algorithm (i.e. DQN) for serving tasks.
 	Algorithm *SchedulingAlgorithm `json:"algorithm,omitempty"`
 
 	//SchedulingResult specifies
@@ -46,13 +46,25 @@ const (
 )
 
 type SchedulingResult struct {
-	TargetNode corev1.Node `json:"targetNode"`
+	Type           SchedulingType `json:"type"`
+	TargetNode     corev1.Node    `json:"targetNode"`
+	ScalingReplica int32          `json:"scalingReplica"`
 }
 
 // SchedulingDecesionStatus defines the observed state of SchedulingDecesion
 type SchedulingDecesionStatus struct {
-	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
+
+	// The last time this condition was updated.
+	LastUpdateTime metav1.Time `json:"lastUpdateTime,omitempty"`
+
+	// Status of the condition, one of True, False, Unknown.
+	Status corev1.ConditionStatus `json:"status"`
+
+	//Is this sd is used to scheduling.
+	Used bool `json:"used"`
+
+	//The time SchedulingDecesion has been completed.
+	CompletionTime *metav1.Time `json:"completionTime,omitempty"`
 }
 
 //+kubebuilder:object:root=true
@@ -75,6 +87,14 @@ type SchedulingDecesionList struct {
 	metav1.ListMeta `json:"metadata,omitempty"`
 	Items           []SchedulingDecesion `json:"items"`
 }
+
+type SchedulingType string
+
+const (
+	Transition        SchedulingType = "Transition"
+	Scaling           SchedulingType = "Scaling"
+	TransitionScaling SchedulingType = "TransitionScaling"
+)
 
 func init() {
 	SchemeBuilder.Register(&SchedulingDecesion{}, &SchedulingDecesionList{})
