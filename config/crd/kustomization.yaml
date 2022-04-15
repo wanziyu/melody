@@ -5,7 +5,6 @@ resources:
 - bases/melody.io.melody.io_inferences.yaml
 - bases/melody.io.melody.io_schedulingdecesions.yaml
 #+kubebuilder:scaffold:crdkustomizeresource
-
 patchesStrategicMerge:
 # [WEBHOOK] To enable webhook, uncomment all the sections with [WEBHOOK] prefix.
 # patches here are for enabling the conversion webhook for each CRD

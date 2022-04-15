@@ -18,20 +18,64 @@ package controllers
 
 import (
 	"context"
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/equality"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
+	"github.com/go-logr/logr"
+	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/client-go/tools/record"
+	melodyiov1alpha1 "melody/api/v1alpha1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/log"
-
-	melodyiov1alpha1 "melody/api/v1alpha1"
+	logf "sigs.k8s.io/controller-runtime/pkg/log"
+	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
+
+const (
+	ControllerName = "inference-controller"
+)
+
+var (
+	log = logf.Log.WithName(ControllerName)
+)
+
+//NewReconciler returns a new reconciler
+func NewReconciler(mgr manager.Manager) *InferenceReconciler {
+	r := &InferenceReconciler{
+		Client:   mgr.GetClient(),
+		Scheme:   mgr.GetScheme(),
+		recorder: mgr.GetEventRecorderFor(ControllerName),
+		Log:      logf.Log.WithName(ControllerName),
+	}
+	r.updateStatusHandler = r.updateStatus
+	return r
+}
+
+func (r *InferenceReconciler) updateStatus(instance *melodyiov1alpha1.Inference) error {
+	err := r.Status().Update(context.TODO(), instance)
+	if err != nil {
+		if !errors.IsConflict(err) {
+			return err
+		}
+	}
+	return nil
+}
 
 // InferenceReconciler reconciles a Inference object
 type InferenceReconciler struct {
 	client.Client
-	Scheme *runtime.Scheme
+	Log                 logr.Logger
+	Scheme              *runtime.Scheme
+	recorder            record.EventRecorder
+	updateStatusHandler updateStatusFunc
 }
+
+type updateStatusFunc func(instance *melodyiov1alpha1.Inference) error
+
+var _ reconcile.Reconciler = &InferenceReconciler{}
 
 //+kubebuilder:rbac:groups=melody.io.melody.io,resources=inferences,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=melody.io.melody.io,resources=inferences/status,verbs=get;update;patch
@@ -47,10 +91,54 @@ type InferenceReconciler struct {
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.10.0/pkg/reconcile
 func (r *InferenceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	_ = log.FromContext(ctx)
+	logger := log.WithValues("Inference", req.NamespacedName)
 
-	// TODO(user): your logic here
+	// Fetch the inference instance
+	original := &melodyiov1alpha1.Inference{}
+	err := r.Get(context.TODO(), req.NamespacedName, original)
+	if err != nil {
+		if errors.IsNotFound(err) {
+			// Object not found, return. Created objects are automatically garbage collected.
+			// For additional cleanup logic use finalizers.
+			return reconcile.Result{}, nil
+		}
+		logger.Error(err, "Inference instance get error")
+		return reconcile.Result{}, err
+	}
+	instance := original.DeepCopy()
 
+	// Cleanup upon completion
+	if util.IsCompletedExperiment(instance) {
+		if !util.HasRunningTrials(instance) {
+			return reconcile.Result{}, nil
+		}
+	}
+	if !util.IsCreatedExperiment(instance) {
+		// Create the experiment
+		if instance.Status.StartTime == nil {
+			now := metav1.Now()
+			instance.Status.StartTime = &now
+		}
+		message := "Experiment is created"
+		util.MarkExperimentStatusCreated(instance, message)
+	} else {
+		// Reconcile experiment
+		err := r.ReconcileExperiment(instance)
+		if err != nil {
+			logger.Error(err, "Reconcile experiment error")
+			r.recorder.Eventf(instance, corev1.EventTypeWarning, "ReconcileFailed", "Failed to reconcile: %v", err)
+			return reconcile.Result{}, err
+		}
+	}
+
+	// Update experiment status
+	if !equality.Semantic.DeepEqual(original.Status, instance.Status) {
+		err = r.updateStatusHandler(instance)
+		if err != nil {
+			logger.Error(err, "Update experiment status error")
+			return reconcile.Result{}, err
+		}
+	}
 	return ctrl.Result{}, nil
 }
 
