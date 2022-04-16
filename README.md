@@ -13,7 +13,7 @@ Melody uses Deep Q-learning as the base scheduling algorithm, use prometheus to 
 </h1>
 
 ## Features
-key benefits include
+key benefits include:
 - Support auto-scheduling ML inference pods between edge nodes.
 - Continuously balance the computing resources (cpu, memory) on edge nodes.
 - Consider the local model store for online serving jobs.
