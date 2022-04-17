@@ -19,7 +19,6 @@ package controllers
 import (
 	"context"
 	appsv1 "k8s.io/api/apps/v1"
-	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
@@ -78,33 +77,21 @@ type InferenceReconciler struct {
 
 type updateStatusFunc func(instance *melodyiov1alpha1.Inference) error
 
-var _ reconcile.Reconciler = &InferenceReconciler{}
-
 func addWatch(c controller.Controller) error {
-	// Watch for changes to inference 
+	// Watch for changes to inference
 	err := c.Watch(&source.Kind{Type: &melodyiov1alpha1.Inference{}}, &handler.EnqueueRequestForObject{})
 	if err != nil {
 		log.Error(err, "Inference watch error")
 		return err
 	}
-	// Watch for changes to client job
-	err = c.Watch(
-		&source.Kind{Type: &batchv1.Job{}},
-		&handler.EnqueueRequestForOwner{
-			IsController: true,
-			OwnerType:    &melodyiov1alpha1.Inference{},
-		})
-	if err != nil {
-		log.Error(err, "Client Job watch error")
-		return err
-	}
+
 	// Watch for changes to service deployment
 	err = c.Watch(&source.Kind{Type: &appsv1.Deployment{}}, &handler.EnqueueRequestForOwner{
 		IsController: true,
 		OwnerType:    &melodyiov1alpha1.Inference{},
 	})
 	if err != nil {
-		log.Error(err, "Service Deployment watch error")
+		log.Error(err, "Inference Deployment watch error")
 		return err
 	}
 	// Watch for changes to service
@@ -113,7 +100,7 @@ func addWatch(c controller.Controller) error {
 		OwnerType:    &melodyiov1alpha1.Inference{},
 	})
 	if err != nil {
-		log.Error(err, "Service Service watch error")
+		log.Error(err, "Inference Service watch error")
 		return err
 	}
 	return nil
@@ -123,8 +110,7 @@ func addWatch(c controller.Controller) error {
 //+kubebuilder:rbac:groups=melody.io.melody.io,resources=inferences/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=melody.io.melody.io,resources=inferences/finalizers,verbs=update
 //+kubebuilder:rbac:groups=melody.io.melody.io,resources=pod,verbs=get;update;patch
-
-func (r *InferenceReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
+func (r *InferenceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	logger := log.WithValues("Inference", req.NamespacedName)
 	// Fetch the inference instance
 	original := &melodyiov1alpha1.Inference{}
@@ -146,7 +132,15 @@ func (r *InferenceReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *InferenceReconciler) SetupWithManager(mgr ctrl.Manager) error {
-	return ctrl.NewControllerManagedBy(mgr).
-		For(&melodyiov1alpha1.Inference{}).
-		Complete(r)
+	c, err := controller.New(ControllerName, mgr, controller.Options{Reconciler: r})
+	if err != nil {
+		log.Error(err, "Failed to create inference controller")
+		return err
+	}
+	if err = addWatch(c); err != nil {
+		log.Error(err, "Inference watch failed")
+		return err
+	}
+	log.Info("Inference controller created")
+	return nil
 }
