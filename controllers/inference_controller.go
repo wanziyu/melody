@@ -18,10 +18,13 @@ package controllers
 
 import (
 	"context"
+	appsv1 "k8s.io/api/apps/v1"
+	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/equality"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"sigs.k8s.io/controller-runtime/pkg/controller"
+	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+	"sigs.k8s.io/controller-runtime/pkg/source"
 
 	"github.com/go-logr/logr"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -77,13 +80,52 @@ type updateStatusFunc func(instance *melodyiov1alpha1.Inference) error
 
 var _ reconcile.Reconciler = &InferenceReconciler{}
 
+func addWatch(c controller.Controller) error {
+	// Watch for changes to inference 
+	err := c.Watch(&source.Kind{Type: &melodyiov1alpha1.Inference{}}, &handler.EnqueueRequestForObject{})
+	if err != nil {
+		log.Error(err, "Inference watch error")
+		return err
+	}
+	// Watch for changes to client job
+	err = c.Watch(
+		&source.Kind{Type: &batchv1.Job{}},
+		&handler.EnqueueRequestForOwner{
+			IsController: true,
+			OwnerType:    &melodyiov1alpha1.Inference{},
+		})
+	if err != nil {
+		log.Error(err, "Client Job watch error")
+		return err
+	}
+	// Watch for changes to service deployment
+	err = c.Watch(&source.Kind{Type: &appsv1.Deployment{}}, &handler.EnqueueRequestForOwner{
+		IsController: true,
+		OwnerType:    &melodyiov1alpha1.Inference{},
+	})
+	if err != nil {
+		log.Error(err, "Service Deployment watch error")
+		return err
+	}
+	// Watch for changes to service
+	err = c.Watch(&source.Kind{Type: &corev1.Service{}}, &handler.EnqueueRequestForOwner{
+		IsController: true,
+		OwnerType:    &melodyiov1alpha1.Inference{},
+	})
+	if err != nil {
+		log.Error(err, "Service Service watch error")
+		return err
+	}
+	return nil
+}
+
 //+kubebuilder:rbac:groups=melody.io.melody.io,resources=inferences,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=melody.io.melody.io,resources=inferences/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=melody.io.melody.io,resources=inferences/finalizers,verbs=update
 //+kubebuilder:rbac:groups=melody.io.melody.io,resources=pod,verbs=get;update;patch
-func (r *InferenceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	logger := log.WithValues("Inference", req.NamespacedName)
 
+func (r *InferenceReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
+	logger := log.WithValues("Inference", req.NamespacedName)
 	// Fetch the inference instance
 	original := &melodyiov1alpha1.Inference{}
 	err := r.Get(context.TODO(), req.NamespacedName, original)
@@ -96,40 +138,9 @@ func (r *InferenceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		logger.Error(err, "Inference instance get error")
 		return reconcile.Result{}, err
 	}
-	instance := original.DeepCopy()
 
-	// Cleanup upon completion
-	if util.IsCompletedExperiment(instance) {
-		if !util.HasRunningTrials(instance) {
-			return reconcile.Result{}, nil
-		}
-	}
-	if !util.IsCreatedExperiment(instance) {
-		// Create the experiment
-		if instance.Status.StartTime == nil {
-			now := metav1.Now()
-			instance.Status.StartTime = &now
-		}
-		message := "Experiment is created"
-		util.MarkExperimentStatusCreated(instance, message)
-	} else {
-		// Reconcile experiment
-		err := r.ReconcileExperiment(instance)
-		if err != nil {
-			logger.Error(err, "Reconcile experiment error")
-			r.recorder.Eventf(instance, corev1.EventTypeWarning, "ReconcileFailed", "Failed to reconcile: %v", err)
-			return reconcile.Result{}, err
-		}
-	}
+	//instance := original.DeepCopy()
 
-	// Update experiment status
-	if !equality.Semantic.DeepEqual(original.Status, instance.Status) {
-		err = r.updateStatusHandler(instance)
-		if err != nil {
-			logger.Error(err, "Update experiment status error")
-			return reconcile.Result{}, err
-		}
-	}
 	return ctrl.Result{}, nil
 }
 
