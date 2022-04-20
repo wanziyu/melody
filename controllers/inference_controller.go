@@ -20,6 +20,7 @@ import (
 	"context"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -94,6 +95,7 @@ func addWatch(c controller.Controller) error {
 		log.Error(err, "Inference Deployment watch error")
 		return err
 	}
+
 	// Watch for changes to service
 	err = c.Watch(&source.Kind{Type: &corev1.Service{}}, &handler.EnqueueRequestForOwner{
 		IsController: true,
@@ -109,9 +111,10 @@ func addWatch(c controller.Controller) error {
 //+kubebuilder:rbac:groups=melody.io.melody.io,resources=inferences,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=melody.io.melody.io,resources=inferences/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=melody.io.melody.io,resources=inferences/finalizers,verbs=update
-//+kubebuilder:rbac:groups=melody.io.melody.io,resources=pod,verbs=get;update;patch
+//+kubebuilder:rbac:groups=melody.io.melody.io,resources=pod,verbs=get;list;create;update;patch;delete
 func (r *InferenceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	logger := log.WithValues("Inference", req.NamespacedName)
+
 	// Fetch the inference instance
 	original := &melodyiov1alpha1.Inference{}
 	err := r.Get(context.TODO(), req.NamespacedName, original)
@@ -125,14 +128,31 @@ func (r *InferenceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		return reconcile.Result{}, err
 	}
 
-	//instance := original.DeepCopy()
-
+	//Fetch the Inference fields
+	instance := original.DeepCopy()
+	// If not created, create the trial
+	if !util.IsCreatedInference(instance) {
+		if instance.Status.StartTime == nil {
+			now := metav1.Now()
+			instance.Status.StartTime = &now
+		}
+		msg := "Inference is created"
+		util.MarkTrialStatusCreatedTrial(instance, msg)
+	} else {
+		// Reconcile trial
+		err := r.reconcileInference(instance)
+		if err != nil {
+			logger.Error(err, "Reconcile inference error")
+			return reconcile.Result{}, err
+		}
+	}
 	return ctrl.Result{}, nil
 }
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *InferenceReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	c, err := controller.New(ControllerName, mgr, controller.Options{Reconciler: r})
+
 	if err != nil {
 		log.Error(err, "Failed to create inference controller")
 		return err

@@ -58,6 +58,12 @@ type InferenceStatus struct {
 	// InferenceEndpoints exposes available serving service endpoint.
 	InferenceEndpoint string `json:"inferenceEndpoint,omitempty"`
 
+	// The time this inference job was started.
+	StartTime *metav1.Time `json:"startTime,omitempty"`
+
+	// The time this inference job was completed.
+	CompletionTime *metav1.Time `json:"completionTime,omitempty"`
+
 	ServingStatuses []ServingStatus `json:"servingStatuses,omitempty"`
 }
 
@@ -69,12 +75,6 @@ type ServingStatus struct {
 	Replicas int32 `json:"replicas"`
 	// ReadyReplicas is the ready replicas of current predictor.
 	ReadyReplicas int32 `json:"readyReplicas"`
-
-	// The time this inference job was started.
-	StartTime *metav1.Time `json:"startTime,omitempty"`
-
-	// The time this inference job was completed.
-	CompletionTime *metav1.Time `json:"completionTime,omitempty"`
 
 	// Status of the condition, one of True, False, Unknown.
 	Status corev1.ConditionStatus `json:"status"`
