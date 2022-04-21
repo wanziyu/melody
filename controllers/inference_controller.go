@@ -117,7 +117,7 @@ func (r *InferenceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 
 	// Fetch the inference instance
 	original := &melodyiov1alpha1.Inference{}
-	err := r.Get(context.TODO(), req.NamespacedName, original)
+	err := r.Get(ctx, req.NamespacedName, original)
 	if err != nil {
 		if errors.IsNotFound(err) {
 			// Object not found, return. Created objects are automatically garbage collected.
@@ -146,6 +146,7 @@ func (r *InferenceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 			return reconcile.Result{}, err
 		}
 	}
+
 	return ctrl.Result{}, nil
 }
 
@@ -157,6 +158,7 @@ func (r *InferenceReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		log.Error(err, "Failed to create inference controller")
 		return err
 	}
+	//watch for changes Inference
 	if err = addWatch(c); err != nil {
 		log.Error(err, "Inference watch failed")
 		return err
