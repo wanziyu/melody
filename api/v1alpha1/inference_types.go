@@ -110,7 +110,7 @@ type DomainType string
 
 const (
 	ImageProcessingDomain DomainType = "image"
-	TimeSeriesDomain      DomainType = "timeseries"
+	TimeSeriesDomain      DomainType = "time-series"
 )
 
 type ServingStatusType string
