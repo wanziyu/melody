@@ -35,6 +35,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
+
+	util "melody/controllers/utils"
 )
 
 const (
@@ -130,16 +132,16 @@ func (r *InferenceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 
 	//Fetch the Inference fields
 	instance := original.DeepCopy()
-	// If not created, create the trial
+	// If not created, create the inference
 	if !util.IsCreatedInference(instance) {
 		if instance.Status.StartTime == nil {
 			now := metav1.Now()
 			instance.Status.StartTime = &now
 		}
 		msg := "Inference is created"
-		util.MarkTrialStatusCreatedTrial(instance, msg)
+		util.MarkInferenceStatusPendingTrial(instance, msg)
 	} else {
-		// Reconcile trial
+		// Reconcile Inference
 		err := r.reconcileInference(instance)
 		if err != nil {
 			logger.Error(err, "Reconcile inference error")
@@ -148,6 +150,12 @@ func (r *InferenceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 	}
 
 	return ctrl.Result{}, nil
+}
+
+//reconcileTrial reconcile the trial with core functions
+func (r *InferenceReconciler) reconcileInference(instance *melodyiov1alpha1.Inference) error {
+
+	return nil
 }
 
 // SetupWithManager sets up the controller with the Manager.

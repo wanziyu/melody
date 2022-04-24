@@ -74,7 +74,10 @@ type ServingStatus struct {
 	// Replicas is the expected replicas of current predictor.
 	Replicas int32 `json:"replicas"`
 	// ReadyReplicas is the ready replicas of current predictor.
-	ReadyReplicas int32 `json:"readyReplicas"`
+	//ReadyReplicas int32 `json:"readyReplicas"`
+
+	// The last time this condition was updated.
+	LastUpdateTime metav1.Time `json:"lastUpdateTime,omitempty"`
 
 	// Status of the condition, one of True, False, Unknown.
 	Status corev1.ConditionStatus `json:"status"`
