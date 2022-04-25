@@ -21,6 +21,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -117,6 +118,7 @@ func addWatch(c controller.Controller) error {
 func (r *InferenceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	logger := log.WithValues("Inference", req.NamespacedName)
 
+	//如果监听到事件的变化
 	// Fetch the inference instance
 	original := &melodyiov1alpha1.Inference{}
 	err := r.Get(ctx, req.NamespacedName, original)
@@ -124,6 +126,7 @@ func (r *InferenceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		if errors.IsNotFound(err) {
 			// Object not found, return. Created objects are automatically garbage collected.
 			// For additional cleanup logic use finalizers.
+			log.Info("try to get inference, but it has been deleted", "key", req.String())
 			return reconcile.Result{}, nil
 		}
 		logger.Error(err, "Inference instance get error")
@@ -152,10 +155,25 @@ func (r *InferenceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 	return ctrl.Result{}, nil
 }
 
-//reconcileTrial reconcile the trial with core functions
+//reconcileInference reconcile the inference with core functions
 func (r *InferenceReconciler) reconcileInference(instance *melodyiov1alpha1.Inference) error {
+	logger := log.WithValues("Inference", types.NamespacedName{Name: instance.GetName(), Namespace: instance.GetNamespace()})
 
+	// Get desired service, and reconcile it
+	service, err := r.getDesiredService(instance)
+	if err != nil {
+		logger.Error(err, "ML service get error")
+		return err
+	}
 	return nil
+
+	// Reconcile the service
+	err = r.reconcileService(instance, service)
+	if err != nil {
+		logger.Error(err, "Reconcile ML service error")
+		return err
+	}
+
 }
 
 // SetupWithManager sets up the controller with the Manager.
