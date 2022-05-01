@@ -6,6 +6,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	consts "melody/controllers/const"
 
 	"errors"
 	melodyv1alpha1 "melody/api/v1alpha1"
@@ -159,4 +160,34 @@ func IsKilledInference(inference *melodyv1alpha1.Inference) bool {
 
 func IsPendingInference(inference *melodyv1alpha1.Inference) bool {
 	return hasConditionInference(inference, melodyv1alpha1.ServingPending)
+}
+
+func ServiceDeploymentLabels(instance *melodyv1alpha1.Inference) map[string]string {
+	res := make(map[string]string)
+	for k, v := range instance.Labels {
+		res[k] = v
+	}
+	res[consts.LabelInferenceName] = instance.Name
+	return res
+}
+
+// ServicePodLabels returns the expected trial labels.
+func ServicePodLabels(instance *melodyv1alpha1.Inference) map[string]string {
+	res := make(map[string]string)
+	for k, v := range instance.Labels {
+		res[k] = v
+	}
+	res[consts.LabelInferenceName] = instance.Name
+	res[consts.LabelDeploymentName] = GetServiceDeploymentName(instance)
+	return res
+}
+
+// ClientLabels returns the expected inference labels.
+func ClientLabels(instance *melodyv1alpha1.Inference) map[string]string {
+	res := make(map[string]string)
+	for k, v := range instance.Labels {
+		res[k] = v
+	}
+	res["inference"] = instance.Name
+	return res
 }

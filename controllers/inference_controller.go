@@ -154,11 +154,11 @@ func (r *InferenceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		}
 	}
 
-	// Update inference  status
+	// Update inference status
 	if !equality.Semantic.DeepEqual(original.Status, instance.Status) {
 		err = r.updateStatusHandler(instance)
 		if err != nil {
-			logger.Error(err, "Update inference  instance status error")
+			logger.Error(err, "Update inference instance status error")
 			return reconcile.Result{}, err
 		}
 	}

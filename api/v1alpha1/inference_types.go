@@ -31,6 +31,9 @@ type InferenceSpec struct {
 	Domain DomainType `json:"domain,omitempty"`
 	// PredictorStatuses exposes current observed status for each predictor.
 	Servings []ServingSpec `json:"servings"`
+
+	// The target service pod/deployment whose parameters to be tuned
+	ServicePodTemplate corev1.PodTemplate `json:"servicePodTemplate,omitempty"`
 }
 
 type ServingSpec struct {
