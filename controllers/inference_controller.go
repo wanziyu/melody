@@ -19,6 +19,7 @@ package controllers
 import (
 	"context"
 	appsv1 "k8s.io/api/apps/v1"
+	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/equality"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -153,11 +154,11 @@ func (r *InferenceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		}
 	}
 
-	// Update trial status
+	// Update inference  status
 	if !equality.Semantic.DeepEqual(original.Status, instance.Status) {
 		err = r.updateStatusHandler(instance)
 		if err != nil {
-			logger.Error(err, "Update trial instance status error")
+			logger.Error(err, "Update inference  instance status error")
 			return reconcile.Result{}, err
 		}
 	}
@@ -177,6 +178,13 @@ func (r *InferenceReconciler) reconcileInference(instance *melodyiov1alpha1.Infe
 	}
 	return nil
 
+	// Get desired deployment
+	desiredDeploy, err := r.getDesiredDeploymentSpec(instance)
+	if err != nil {
+		logger.Error(err, "Service deployment construction error")
+		return err
+	}
+
 	// Reconcile the service
 	err = r.reconcileService(instance, service)
 	if err != nil {
@@ -184,6 +192,29 @@ func (r *InferenceReconciler) reconcileInference(instance *melodyiov1alpha1.Infe
 		return err
 	}
 	return nil
+
+	// Reconcile the deployment
+	deployedDeployment, err := r.reconcileServiceDeployment(instance, desiredDeploy)
+	if err != nil {
+		logger.Error(err, "Reconcile ML deployment error")
+		return err
+	}
+	// Check if the job need to be deleted
+	if deployedDeployment == nil {
+		_, err := r.reconcileJob(instance, desiredJob)
+		if err != nil {
+			logger.Error(err, "Reconcile client-side job error")
+			return err
+		}
+		return nil
+	}
+
+	deployedJob := &batchv1.Job{}
+
+	// Update inference status (conditions and results)
+
+	return nil
+
 }
 
 // SetupWithManager sets up the controller with the Manager.
