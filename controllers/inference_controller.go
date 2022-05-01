@@ -19,7 +19,6 @@ package controllers
 import (
 	"context"
 	appsv1 "k8s.io/api/apps/v1"
-	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/equality"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -116,7 +115,8 @@ func addWatch(c controller.Controller) error {
 //+kubebuilder:rbac:groups=melody.io.melody.io,resources=inferences,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=melody.io.melody.io,resources=inferences/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=melody.io.melody.io,resources=inferences/finalizers,verbs=update
-//+kubebuilder:rbac:groups=melody.io.melody.io,resources=pod,verbs=get;list;create;update;patch;delete
+//+kubebuilder:rbac:groups=apps,resources=deployments,verbs=get;list;create;update;patch;delete
+//+kubebuilder:rbac:groups=apps,resources=services,verbs=get;list;create;update;patch;delete
 func (r *InferenceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	logger := log.WithValues("Inference", req.NamespacedName)
 
@@ -170,7 +170,7 @@ func (r *InferenceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 func (r *InferenceReconciler) reconcileInference(instance *melodyiov1alpha1.Inference) error {
 	logger := log.WithValues("Inference", types.NamespacedName{Name: instance.GetName(), Namespace: instance.GetNamespace()})
 
-	// Get desired service, and reconcile it
+	// 获得期望的Service 然后Reconcile
 	service, err := r.getDesiredService(instance)
 	if err != nil {
 		logger.Error(err, "ML service get error")
@@ -178,41 +178,38 @@ func (r *InferenceReconciler) reconcileInference(instance *melodyiov1alpha1.Infe
 	}
 	return nil
 
-	// Get desired deployment
+	// 获得期望的deployment, 然后Reconcile
 	desiredDeploy, err := r.getDesiredDeploymentSpec(instance)
 	if err != nil {
 		logger.Error(err, "Service deployment construction error")
 		return err
 	}
 
-	// Reconcile the service
+	// Reconcile创建的service实例
 	err = r.reconcileService(instance, service)
 	if err != nil {
-		logger.Error(err, "Reconcile ML service error")
+		logger.Error(err, "Reconcile ML inference service error")
 		return err
 	}
 	return nil
 
-	// Reconcile the deployment
+	// Reconcile创建的deployment实例
 	deployedDeployment, err := r.reconcileServiceDeployment(instance, desiredDeploy)
 	if err != nil {
-		logger.Error(err, "Reconcile ML deployment error")
+		logger.Error(err, "Reconcile ML inference deployment error")
 		return err
 	}
-	// Check if the job need to be deleted
-	if deployedDeployment == nil {
-		_, err := r.reconcileJob(instance, desiredJob)
-		if err != nil {
-			logger.Error(err, "Reconcile client-side job error")
+
+	// 更新inference的状态
+	// Update inference status (conditions and results)
+	if util.IsServiceDeplomentReady(deployedDeployment.Status.Conditions) {
+		if err = r.UpdateInfStatusByClientJob(instance, deployedJob); err != nil {
+			logger.Error(err, "Update trial status by client-side job condition error")
 			return err
 		}
-		return nil
+	} else {
+		r.UpdateTrialStatusByServiceDeployment(instance, deployedDeployment)
 	}
-
-	deployedJob := &batchv1.Job{}
-
-	// Update inference status (conditions and results)
-
 	return nil
 
 }

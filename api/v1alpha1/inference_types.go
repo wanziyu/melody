@@ -32,8 +32,8 @@ type InferenceSpec struct {
 	// PredictorStatuses exposes current observed status for each predictor.
 	Servings []ServingSpec `json:"servings"`
 
-	// The target service pod/deployment whose parameters to be tuned
-	ServicePodTemplate corev1.PodTemplate `json:"servicePodTemplate,omitempty"`
+	/*// The target service pod/deployment whose parameters to be tuned
+	ServicePodTemplate corev1.PodTemplate `json:"servicePodTemplate,omitempty"`*/
 }
 
 type ServingSpec struct {
@@ -76,16 +76,18 @@ type ServingStatus struct {
 	Name string `json:"name"`
 	// Replicas is the expected replicas of current predictor.
 	Replicas int32 `json:"replicas"`
-	// ReadyReplicas is the ready replicas of current predictor.
-	//ReadyReplicas int32 `json:"readyReplicas"`
-
+	//ReadyReplicas is the ready replicas of current predictor.
+	ReadyReplicas int32 `json:"readyReplicas"`
 	// The last time this condition was updated.
 	LastUpdateTime metav1.Time `json:"lastUpdateTime,omitempty"`
-
+	// Standard Kubernetes object's LastTransitionTime
+	LastTransitionTime metav1.Time `json:"lastTransitionTime,omitempty"`
 	// Status of the condition, one of True, False, Unknown.
 	Status corev1.ConditionStatus `json:"status"`
-
+	//Status Type of Serving,
 	Type ServingStatusType `json:"type"`
+	// A human readable message indicating details about the transition.
+	Message string `json:"message,omitempty"`
 }
 
 //+kubebuilder:object:root=true
@@ -112,7 +114,7 @@ type InferenceList struct {
 type DomainType string
 
 const (
-	ImageProcessingDomain DomainType = "image"
+	ImageProcessingDomain DomainType = "image-processing"
 	TimeSeriesDomain      DomainType = "time-series"
 )
 

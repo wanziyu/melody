@@ -10,9 +10,10 @@ const (
 	// LabelDeploymentName is the label of deployment name.
 	LabelDeploymentName = "deployment"
 	// DefaultServicePort is the default port of sampling_client service.
-	DefaultServicePort = 8500
+	InferenceServicePort   = 8500
+	InferenceContainerPort = 8300
 	// DefaultServicePortName is the default port name of sampling_client service.
-	DefaultServicePortName = "profile-service"
+	InferenceServicePortName = "inference-service"
 	// DefaultMetricValue is the default trial result value, set for failed trials
 	DefaultMetricValue = "0.0"
 	// DefaultSamplingService is the default algorithm k8s service name

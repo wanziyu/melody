@@ -171,7 +171,7 @@ func ServiceDeploymentLabels(instance *melodyv1alpha1.Inference) map[string]stri
 	return res
 }
 
-// ServicePodLabels returns the expected trial labels.
+// ServicePodLabels returns the expected inference labels.
 func ServicePodLabels(instance *melodyv1alpha1.Inference) map[string]string {
 	res := make(map[string]string)
 	for k, v := range instance.Labels {

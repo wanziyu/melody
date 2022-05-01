@@ -14,6 +14,10 @@ func GetServiceName(t *melodyiov1alpha1.Inference) string {
 	return t.Name + "-" + "service"
 }
 
+func GetContainerName(t *melodyiov1alpha1.Inference) string {
+	return t.Name + "-" + "container"
+}
+
 func GetStressTestJobName(t *melodyiov1alpha1.Inference) string {
 	return t.Name + "-" + "client-job"
 }
@@ -21,7 +25,7 @@ func GetStressTestJobName(t *melodyiov1alpha1.Inference) string {
 func GetServiceEndpoint(t *melodyiov1alpha1.Inference) string {
 	return fmt.Sprintf("%s:%d",
 		GetServiceName(t),
-		consts.DefaultServicePort)
+		consts.InferenceServicePort)
 }
 
 func GetDBStorageEndpoint() string {
