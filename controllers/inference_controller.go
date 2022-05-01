@@ -20,6 +20,7 @@ import (
 	"context"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/equality"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
@@ -118,7 +119,7 @@ func addWatch(c controller.Controller) error {
 func (r *InferenceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	logger := log.WithValues("Inference", req.NamespacedName)
 
-	//如果监听到事件的变化
+	// 如果监听到事件的变化
 	// Fetch the inference instance
 	original := &melodyiov1alpha1.Inference{}
 	err := r.Get(ctx, req.NamespacedName, original)
@@ -152,6 +153,15 @@ func (r *InferenceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		}
 	}
 
+	// Update trial status
+	if !equality.Semantic.DeepEqual(original.Status, instance.Status) {
+		err = r.updateStatusHandler(instance)
+		if err != nil {
+			logger.Error(err, "Update trial instance status error")
+			return reconcile.Result{}, err
+		}
+	}
+
 	return ctrl.Result{}, nil
 }
 
@@ -173,7 +183,7 @@ func (r *InferenceReconciler) reconcileInference(instance *melodyiov1alpha1.Infe
 		logger.Error(err, "Reconcile ML service error")
 		return err
 	}
-
+	return nil
 }
 
 // SetupWithManager sets up the controller with the Manager.
