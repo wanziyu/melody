@@ -29,6 +29,10 @@ type InferenceSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 	Domain DomainType `json:"domain,omitempty"`
+
+	// Replicas specify the expected model serving  replicas.
+	Replicas *int32 `json:"replicas,omitempty"`
+
 	// PredictorStatuses exposes current observed status for each predictor.
 	Servings []ServingSpec `json:"servings"`
 
@@ -40,26 +44,22 @@ type ServingSpec struct {
 	//Name indicates the serving name.
 	Name string `json:"name,omitempty"`
 
+	Image string `json:"image,omitempty"`
+
 	//ModelPath is the loaded madel filepath in model storage.
 	ModelPath *string `json:"modelPath,omitempty"`
 
 	//ModelVersion specifies the name of target model version to be loaded.
 	ModelVersion string `json:"modelVersion,omitempty"`
 
-	// Replicas specify the expected model serving  replicas.
-	Replicas int32 `json:"replicas,omitempty"`
-
+	//BatchSize specify the expected batch size
 	BatchSize int32 `json:"batchSize,omitempty"`
-
 	// Template describes a template of predictor pod with its properties.
-	Template corev1.PodTemplateSpec `json:"template"`
+	//Template corev1.PodTemplateSpec `json:"template"`
 }
 
 // InferenceStatus defines the observed state of Inference
 type InferenceStatus struct {
-
-	// InferenceEndpoints exposes available serving service endpoint.
-	InferenceEndpoint string `json:"inferenceEndpoint,omitempty"`
 
 	// The time this inference job was started.
 	StartTime *metav1.Time `json:"startTime,omitempty"`
@@ -78,6 +78,8 @@ type ServingStatus struct {
 	Replicas int32 `json:"replicas"`
 	//ReadyReplicas is the ready replicas of current predictor.
 	ReadyReplicas int32 `json:"readyReplicas"`
+	// InferenceEndpoints exposes available serving service endpoint.
+	InferenceEndpoint string `json:"inferenceEndpoint,omitempty"`
 	// The last time this condition was updated.
 	LastUpdateTime metav1.Time `json:"lastUpdateTime,omitempty"`
 	// Standard Kubernetes object's LastTransitionTime

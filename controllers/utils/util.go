@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"fmt"
 	appsv1 "k8s.io/api/apps/v1"
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -168,6 +169,7 @@ func ServiceDeploymentLabels(instance *melodyv1alpha1.Inference) map[string]stri
 		res[k] = v
 	}
 	res[consts.LabelInferenceName] = instance.Name
+	res[consts.LabelDomainName] = string(instance.Spec.Domain)
 	return res
 }
 
@@ -182,12 +184,15 @@ func ServicePodLabels(instance *melodyv1alpha1.Inference) map[string]string {
 	return res
 }
 
-// ClientLabels returns the expected inference labels.
-func ClientLabels(instance *melodyv1alpha1.Inference) map[string]string {
-	res := make(map[string]string)
-	for k, v := range instance.Labels {
-		res[k] = v
-	}
-	res["inference"] = instance.Name
-	return res
+// genPredictorName generate predictor name formatted as {inference name}-{predictor name}.
+func genPredictorName(inf *melodyv1alpha1.Inference, predictor *melodyv1alpha1.ServingSpec) string {
+	return fmt.Sprintf("%s-%s", inf.Name, predictor.Name)
+}
+
+func SvcHostForInference(inf *melodyv1alpha1.Inference) string {
+	return fmt.Sprintf("%s.%s", inf.Name, inf.Namespace)
+}
+
+func SvcHostForPredictor(inf *melodyv1alpha1.Inference, predictor *melodyv1alpha1.ServingSpec) string {
+	return fmt.Sprintf("%s.%s.svc", genPredictorName(inf, predictor), inf.Namespace)
 }

@@ -9,6 +9,7 @@ const (
 	LabelSchedulingDecesionName = "schedulingdecesion"
 	// LabelDeploymentName is the label of deployment name.
 	LabelDeploymentName = "deployment"
+	LabelDomainName     = "domain"
 	// DefaultServicePort is the default port of sampling_client service.
 	InferenceServicePort   = 8500
 	InferenceContainerPort = 8300

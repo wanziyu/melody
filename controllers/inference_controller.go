@@ -20,9 +20,9 @@ import (
 	"context"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/equality"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"reflect"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -49,15 +49,15 @@ var (
 	log = logf.Log.WithName(ControllerName)
 )
 
-//NewReconciler returns a new reconciler
-func NewReconciler(mgr manager.Manager) *InferenceReconciler {
+//NewInferenceReconciler returns a new reconciler
+func NewInferenceReconciler(mgr manager.Manager) *InferenceReconciler {
 	r := &InferenceReconciler{
 		Client:   mgr.GetClient(),
 		Scheme:   mgr.GetScheme(),
 		recorder: mgr.GetEventRecorderFor(ControllerName),
 		Log:      logf.Log.WithName(ControllerName),
 	}
-	r.updateStatusHandler = r.updateStatus
+	//r.updateStatusHandler = r.updateStatus
 	return r
 }
 
@@ -74,13 +74,13 @@ func (r *InferenceReconciler) updateStatus(instance *melodyiov1alpha1.Inference)
 // InferenceReconciler reconciles a Inference object
 type InferenceReconciler struct {
 	client.Client
-	Log                 logr.Logger
-	Scheme              *runtime.Scheme
-	recorder            record.EventRecorder
-	updateStatusHandler updateStatusFunc
+	Log      logr.Logger
+	Scheme   *runtime.Scheme
+	recorder record.EventRecorder
+	//updateStatusHandler updateStatusFunc
 }
 
-type updateStatusFunc func(instance *melodyiov1alpha1.Inference) error
+//type updateStatusFunc func(instance *melodyiov1alpha1.Inference) error
 
 func addWatch(c controller.Controller) error {
 	// Watch for changes to inference
@@ -117,6 +117,7 @@ func addWatch(c controller.Controller) error {
 //+kubebuilder:rbac:groups=melody.io.melody.io,resources=inferences/finalizers,verbs=update
 //+kubebuilder:rbac:groups=apps,resources=deployments,verbs=get;list;create;update;patch;delete
 //+kubebuilder:rbac:groups=apps,resources=services,verbs=get;list;create;update;patch;delete
+
 func (r *InferenceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	logger := log.WithValues("Inference", req.NamespacedName)
 
@@ -154,12 +155,14 @@ func (r *InferenceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		}
 	}
 
-	// Update inference status
-	if !equality.Semantic.DeepEqual(original.Status, instance.Status) {
-		err = r.updateStatusHandler(instance)
-		if err != nil {
-			logger.Error(err, "Update inference instance status error")
-			return reconcile.Result{}, err
+	//4) Compare status before-and-after reconciling and update changes to cluster.
+	if !reflect.DeepEqual(original.Status, instance.Status) {
+		if err = r.Client.Status().Update(context.Background(), instance); err != nil {
+			if errors.IsConflict(err) {
+				// retry later when update operation violates with etcd concurrency control.
+				return ctrl.Result{Requeue: true}, nil
+			}
+			return ctrl.Result{}, err
 		}
 	}
 
@@ -176,7 +179,6 @@ func (r *InferenceReconciler) reconcileInference(instance *melodyiov1alpha1.Infe
 		logger.Error(err, "ML service get error")
 		return err
 	}
-	return nil
 
 	// 获得期望的deployment, 然后Reconcile
 	desiredDeploy, err := r.getDesiredDeploymentSpec(instance)
@@ -191,7 +193,6 @@ func (r *InferenceReconciler) reconcileInference(instance *melodyiov1alpha1.Infe
 		logger.Error(err, "Reconcile ML inference service error")
 		return err
 	}
-	return nil
 
 	// Reconcile创建的deployment实例
 	deployedDeployment, err := r.reconcileServiceDeployment(instance, desiredDeploy)
@@ -201,17 +202,48 @@ func (r *InferenceReconciler) reconcileInference(instance *melodyiov1alpha1.Infe
 	}
 
 	// 更新inference的状态
-	// Update inference status (conditions and results)
 	if util.IsServiceDeplomentReady(deployedDeployment.Status.Conditions) {
-		if err = r.UpdateInfStatusByClientJob(instance, deployedJob); err != nil {
-			logger.Error(err, "Update trial status by client-side job condition error")
+		logger.Info("Service Pod is ready", "name", deployedDeployment.GetName())
+		err = r.updateInferenceStatus(instance, deployedDeployment)
+
+		if err != nil {
+			logger.Error(err, "Update ML inference status error")
 			return err
 		}
-	} else {
-		r.UpdateTrialStatusByServiceDeployment(instance, deployedDeployment)
 	}
 	return nil
 
+}
+
+func (r *InferenceReconciler) updateInferenceStatus(instance *melodyiov1alpha1.Inference, deploy *appsv1.Deployment) error {
+
+	//logger := r.Log.WithValues("Inference", "updateStatus")
+	// 2) Sync each predictor to deploy containers mounted with specific model.
+	for pi := range instance.Spec.Servings {
+		predictor := &instance.Spec.Servings[pi]
+		endpoint := util.SvcHostForPredictor(instance, predictor)
+		//result, err := r.syncPredictor(&instance, pi, predictor)
+		if psLen := len(instance.Status.ServingStatuses); psLen == 0 || psLen < pi {
+			instance.Status.ServingStatuses = append(instance.Status.ServingStatuses, melodyiov1alpha1.ServingStatus{
+				Name:              predictor.Name,
+				Replicas:          deploy.Status.Replicas,
+				ReadyReplicas:     deploy.Status.ReadyReplicas,
+				InferenceEndpoint: endpoint,
+			})
+		} else {
+			ps := &instance.Status.ServingStatuses[pi]
+			ps.Name = predictor.Name
+			ps.Replicas = deploy.Status.Replicas
+			ps.ReadyReplicas = deploy.Status.ReadyReplicas
+			ps.InferenceEndpoint = endpoint
+		}
+		if len(instance.Status.ServingStatuses) > pi+1 {
+			instance.Status.ServingStatuses = instance.Status.ServingStatuses[:pi+1]
+		}
+
+	}
+
+	return nil
 }
 
 // SetupWithManager sets up the controller with the Manager.

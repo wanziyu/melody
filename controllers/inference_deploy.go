@@ -78,17 +78,16 @@ func (r *InferenceReconciler) reconcileService(instance *melodyiov1alpha1.Infere
 func (r *InferenceReconciler) getDesiredDeploymentSpec(instance *melodyiov1alpha1.Inference) (*appsv1.Deployment, error) {
 	// Prepare podTemplate
 	podTemplate := &corev1.PodTemplateSpec{}
-	if &instance.Spec.ServicePodTemplate != nil {
-		instance.Spec.ServicePodTemplate.Template.Spec.DeepCopyInto(&podTemplate.Spec)
-	}
 
 	podTemplate.Labels = util.ServicePodLabels(instance)
-	/*	podTemplate.Spec = corev1.PodSpec{
-		Containers: []corev1.Container{
+
+	for pi := range instance.Spec.Servings {
+		predictor := &instance.Spec.Servings[pi]
+		Containers := []corev1.Container{
 			{
-				Name: util.GetContainerName(instance),
+				Name: predictor.Name,
 				// 用指定的镜像
-				Image:           instance.Spec.Image,
+				Image:           predictor.Image,
 				ImagePullPolicy: "IfNotPresent",
 				//指定端口
 				Ports: []corev1.ContainerPort{
@@ -99,12 +98,10 @@ func (r *InferenceReconciler) getDesiredDeploymentSpec(instance *melodyiov1alpha
 					},
 				},
 			},
-		},
-	}*/
-	/*	for i := range podTemplate.Spec.Containers {
-		c := &podTemplate.Spec.Containers[i]
-		//c.Env, c.Args, c.Resources = appendServiceEnv(instance, c.Env, c.Args, c.Resources)
-	}*/
+		}
+		podTemplate.Spec.Containers = append(podTemplate.Spec.Containers, Containers...)
+	}
+
 	// Prepare k8s deployment
 	deploy := &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
@@ -116,12 +113,9 @@ func (r *InferenceReconciler) getDesiredDeploymentSpec(instance *melodyiov1alpha
 		Spec: appsv1.DeploymentSpec{
 			Selector: &metav1.LabelSelector{MatchLabels: util.ServicePodLabels(instance)},
 			Template: *podTemplate,
+			Replicas: instance.Spec.Replicas,
 		},
 	}
-	/*	if instance.Spec.ServiceProgressDeadline != nil {
-		deploy.Spec.ProgressDeadlineSeconds = instance.Spec.ServiceProgressDeadline
-	}*/
-	// ToDo: SetControllerReference here is useless, as the controller delete svc upon trial completion
 	// Add owner reference to the service so that it could be GC
 	if err := controllerutil.SetControllerReference(instance, deploy, r.Scheme); err != nil {
 		return nil, err
@@ -142,7 +136,12 @@ func (r *InferenceReconciler) reconcileServiceDeployment(instance *melodyiov1alp
 			}
 
 			logger.Info("Creating ML inference deployment", "name", deploy.GetName())
+			//创建deployment
 			err = r.Create(context.TODO(), deploy)
+			//创建成功的log
+			r.recorder.Eventf(instance, corev1.EventTypeNormal, "PredictorDeploymentCreated",
+				"Deployment %s for predictor successfully created, replicas: %d", deploy.Name, *deploy.Spec.Replicas)
+
 			if err != nil {
 				logger.Error(err, "Create inference deployment error", "name", deploy.GetName())
 				return nil, err
@@ -212,23 +211,4 @@ func (r *InferenceReconciler) getDesiredJobSpec(instance *melodyiov1alpha1.Infer
 		return nil, err
 	}
 	return job, nil
-}
-
-func (r *InferenceReconciler) UpdateInferenceStatusByServiceDeployment(instance *melodyiov1alpha1.Inference, deployedDeployment *appsv1.Deployment) {
-	logger := log.WithValues("Inference", types.NamespacedName{Name: instance.GetName(), Namespace: instance.GetNamespace()})
-
-	ServiceDeploymentCondition := deployedDeployment.Status.Conditions
-	if util.IsServiceDeplomentFail(ServiceDeploymentCondition) {
-		message := "Inferencee service pod failed"
-		objectiveMetricName := instance.Spec.Objective.ObjectiveMetricName
-		metric := morphlingv1alpha1.Metric{Name: objectiveMetricName, Value: "0.0"}
-		instance.Status.TrialResult = &morphlingv1alpha1.TrialResult{}
-		instance.Status.TrialResult.ObjectiveMetricsObserved = []morphlingv1alpha1.Metric{metric}
-		util.MarkTrialStatusFailed(instance, message)
-		logger.Info("Service deployment is failed", "name", deployedDeployment.GetName())
-	} else {
-		message := "Trial service pod pending"
-		util.MarkTrialStatusPendingTrial(instance, message)
-		logger.Info("Service deployment is pending", "name", deployedDeployment.GetName())
-	}
 }
