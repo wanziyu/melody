@@ -117,7 +117,6 @@ func addWatch(c controller.Controller) error {
 //+kubebuilder:rbac:groups=melody.io.melody.io,resources=inferences/finalizers,verbs=update
 //+kubebuilder:rbac:groups=apps,resources=deployments,verbs=get;list;create;update;patch;delete
 //+kubebuilder:rbac:groups=apps,resources=services,verbs=get;list;create;update;patch;delete
-
 func (r *InferenceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	logger := log.WithValues("Inference", req.NamespacedName)
 
@@ -157,7 +156,7 @@ func (r *InferenceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 
 	//4) Compare status before-and-after reconciling and update changes to cluster.
 	if !reflect.DeepEqual(original.Status, instance.Status) {
-		if err = r.Client.Status().Update(context.Background(), instance); err != nil {
+		if err = r.Status().Update(context.Background(), instance); err != nil {
 			if errors.IsConflict(err) {
 				// retry later when update operation violates with etcd concurrency control.
 				return ctrl.Result{Requeue: true}, nil
