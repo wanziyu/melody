@@ -1,0 +1,82 @@
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  creationTimestamp: null
+  name: manager-role
+rules:
+- apiGroups:
+  - apps
+  resources:
+  - deployments
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+- apiGroups:
+  - apps
+  resources:
+  - services
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+- apiGroups:
+  - melody.io.melody.io
+  resources:
+  - inferences
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - melody.io.melody.io
+  resources:
+  - inferences/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - melody.io.melody.io
+  resources:
+  - inferences/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - melody.io.melody.io
+  resources:
+  - schedulingdecesions
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - melody.io.melody.io
+  resources:
+  - schedulingdecesions/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - melody.io.melody.io
+  resources:
+  - schedulingdecesions/status
+  verbs:
+  - get
+  - patch
+  - update

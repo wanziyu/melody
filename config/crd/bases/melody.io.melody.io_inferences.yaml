@@ -1,0 +1,141 @@
+
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.7.0
+  creationTimestamp: null
+  name: inferences.melody.io.melody.io
+spec:
+  group: melody.io.melody.io
+  names:
+    kind: Inference
+    listKind: InferenceList
+    plural: inferences
+    singular: inference
+  scope: Namespaced
+  versions:
+  - name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: Inference is the Schema for the inferences API
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: InferenceSpec defines the desired state of Inference
+            properties:
+              domain:
+                description: 'INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
+                  Important: Run "make" to regenerate code after modifying this file'
+                type: string
+              replicas:
+                description: Replicas specify the expected model serving  replicas.
+                format: int32
+                type: integer
+              servings:
+                description: PredictorStatuses exposes current observed status for
+                  each predictor.
+                items:
+                  properties:
+                    batchSize:
+                      description: BatchSize specify the expected batch size
+                      format: int32
+                      type: integer
+                    image:
+                      type: string
+                    modelPath:
+                      description: ModelPath is the loaded madel filepath in model
+                        storage.
+                      type: string
+                    modelVersion:
+                      description: ModelVersion specifies the name of target model
+                        version to be loaded.
+                      type: string
+                    name:
+                      description: Name indicates the serving name.
+                      type: string
+                  type: object
+                type: array
+            required:
+            - servings
+            type: object
+          status:
+            description: InferenceStatus defines the observed state of Inference
+            properties:
+              completionTime:
+                description: The time this inference job was completed.
+                format: date-time
+                type: string
+              servingStatuses:
+                items:
+                  properties:
+                    inferenceEndpoint:
+                      description: InferenceEndpoints exposes available serving service
+                        endpoint.
+                      type: string
+                    lastTransitionTime:
+                      description: Standard Kubernetes object's LastTransitionTime
+                      format: date-time
+                      type: string
+                    lastUpdateTime:
+                      description: The last time this condition was updated.
+                      format: date-time
+                      type: string
+                    message:
+                      description: A human readable message indicating details about
+                        the transition.
+                      type: string
+                    name:
+                      description: Name is the name of current predictor.
+                      type: string
+                    readyReplicas:
+                      description: ReadyReplicas is the ready replicas of current
+                        predictor.
+                      format: int32
+                      type: integer
+                    replicas:
+                      description: Replicas is the expected replicas of current predictor.
+                      format: int32
+                      type: integer
+                    status:
+                      description: Status of the condition, one of True, False, Unknown.
+                      type: string
+                    type:
+                      description: Status Type of Serving,
+                      type: string
+                  required:
+                  - name
+                  - readyReplicas
+                  - replicas
+                  - status
+                  - type
+                  type: object
+                type: array
+              startTime:
+                description: The time this inference job was started.
+                format: date-time
+                type: string
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: []
+  storedVersions: []

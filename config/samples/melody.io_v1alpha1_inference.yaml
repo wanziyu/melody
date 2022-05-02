@@ -3,4 +3,12 @@ kind: Inference
 metadata:
   name: inference-sample
 spec:
-  # TODO(user): Add fields here
+  domain: "time-series"
+  replicas: 2
+  servings:
+    - name: model-predictor
+      image: nginx:1.17.1
+      modelVersion: model
+      batchSize: 32
+
+

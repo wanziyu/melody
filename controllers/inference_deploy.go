@@ -139,9 +139,9 @@ func (r *InferenceReconciler) reconcileServiceDeployment(instance *melodyiov1alp
 			//创建deployment
 			err = r.Create(context.TODO(), deploy)
 			//创建成功的log
-			r.recorder.Eventf(instance, corev1.EventTypeNormal, "PredictorDeploymentCreated",
-				"Deployment %s for predictor successfully created, replicas: %d", deploy.Name, *deploy.Spec.Replicas)
-
+			/*			r.recorder.Eventf(instance, corev1.EventTypeNormal, "PredictorDeploymentCreated",
+						"Deployment %s for predictor successfully created, replicas: %d", deploy.Name, *deploy.Spec.Replicas)*/
+			logger.Info("inference deployment is created")
 			if err != nil {
 				logger.Error(err, "Create inference deployment error", "name", deploy.GetName())
 				return nil, err

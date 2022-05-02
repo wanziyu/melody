@@ -112,11 +112,12 @@ func addWatch(c controller.Controller) error {
 	return nil
 }
 
-//+kubebuilder:rbac:groups=melody.io.melody.io,resources=inferences,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=melody.io.melody.io,resources=inferences/status,verbs=get;update;patch
-//+kubebuilder:rbac:groups=melody.io.melody.io,resources=inferences/finalizers,verbs=update
-//+kubebuilder:rbac:groups=apps,resources=deployments,verbs=get;list;create;update;patch;delete
-//+kubebuilder:rbac:groups=apps,resources=services,verbs=get;list;create;update;patch;delete
+// +kubebuilder:rbac:groups=melody.io.melody.io,resources=inferences,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=melody.io.melody.io,resources=inferences/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=melody.io.melody.io,resources=inferences/finalizers,verbs=update
+// +kubebuilder:rbac:groups=apps,resources=deployments,verbs=get;list;create;update;patch;delete
+// +kubebuilder:rbac:groups=apps,resources=services,verbs=get;list;create;update;patch;delete
+
 func (r *InferenceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	logger := log.WithValues("Inference", req.NamespacedName)
 
@@ -144,7 +145,7 @@ func (r *InferenceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 			instance.Status.StartTime = &now
 		}
 		msg := "Inference is created"
-		util.MarkInferenceStatusPendingTrial(instance, msg)
+		util.MarkInferenceStatusCreatedInference(instance, msg)
 	} else {
 		// Reconcile Inference
 		err := r.reconcileInference(instance)
@@ -172,6 +173,7 @@ func (r *InferenceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 func (r *InferenceReconciler) reconcileInference(instance *melodyiov1alpha1.Inference) error {
 	logger := log.WithValues("Inference", types.NamespacedName{Name: instance.GetName(), Namespace: instance.GetNamespace()})
 
+	logger.Info("begin reconcile inference")
 	// 获得期望的Service 然后Reconcile
 	service, err := r.getDesiredService(instance)
 	if err != nil {
@@ -192,7 +194,7 @@ func (r *InferenceReconciler) reconcileInference(instance *melodyiov1alpha1.Infe
 		logger.Error(err, "Reconcile ML inference service error")
 		return err
 	}
-
+	logger.Info("Service is reconciled")
 	// Reconcile创建的deployment实例
 	deployedDeployment, err := r.reconcileServiceDeployment(instance, desiredDeploy)
 	if err != nil {
