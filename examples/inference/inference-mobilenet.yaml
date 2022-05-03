@@ -1,0 +1,12 @@
+apiVersion: melody.io.melody.io/v1alpha1
+kind: Inference
+metadata:
+  name: inference-mobilenet
+spec:
+  domain: "time-series"
+  replicas: 2
+  servings:
+    - name: mobilenet
+      image: kubedl/morphling-tf-model:demo
+      modelVersion: model
+      batchSize: 32
