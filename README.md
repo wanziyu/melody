@@ -17,4 +17,7 @@ key benefits include:
 - Consider the local model store for online serving jobs.
 - Equipped with DQN reinforcement learning algorithm to obtain the balanced scheduling strategy.
 
+# Custome Resource Definition(CRD)
+- Inference define the ML inference jobs, it observes the scheduling decesion CRD, and dynamic adjust the resource limit and request. 
+- Scheduling Decesion define the scheduling result from DQN learning algorithm server, it define the optimal CPU/memory resource for each inference.
 ## Get Started
