@@ -1,4 +1,4 @@
-# Melody: Machine Edge Learning and Dynamic Scheduling 
+# Melody: ML Edge Inference with Dynamic Scheduling 
 Melody is a framework for intelligent scheduling for
 edge computing ML inference instances on Kubernetes. 
 
