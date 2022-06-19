@@ -9,12 +9,11 @@ Melody uses Deep Reinforcement Learning as the scheduling algorithm, use prometh
 
 ## Features
 key benefits include:
-- Support auto-scheduling ML inference pods between edge nodes.
+- Support auto-scheduling ML inference instances between edge nodes.
 - Continuously balance the computing resources (cpu, memory) on edge nodes.
-- Consider the local model store for online serving jobs.
-- Equipped with DQN reinforcement learning algorithm to obtain the balanced scheduling strategy.
+- Equipped with reinforcement learning algorithm to obtain the balanced scheduling strategy.
 
 ## Custome Resource Definition(CRD)
 - Inference define the ML inference jobs, it observes the scheduling decesion CRD, and dynamic adjust the resource limit and request. 
-- Scheduling Decesion define the scheduling result from DQN learning algorithm server, it define the optimal CPU/memory resource for each inference.
+- Scheduling defines the scheduling strategy by communicating with  RL algorithm server, it defines the optimal edge node for each ML serving instance Job.
 ## Get Started
