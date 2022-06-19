@@ -1,6 +1,6 @@
 # Melody: Machine Edge Learning and Dynamic Scheduling 
-Melody is an online scheduling framework for 
-edge computing ML model inference on Kubernetes. 
+Melody is a framework for intelligent scheduling for
+edge computing ML inference instances on Kubernetes. 
 
 ## Overview
 Melody uses Deep Reinforcement Learning as the scheduling algorithm, use prometheus to monitor Edge computing resources and input metrics to DQN, and obtain the optimal scheduling strategy.
