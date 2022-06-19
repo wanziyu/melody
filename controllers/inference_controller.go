@@ -57,7 +57,7 @@ func NewInferenceReconciler(mgr manager.Manager) *InferenceReconciler {
 		recorder: mgr.GetEventRecorderFor(ControllerName),
 		Log:      logf.Log.WithName(ControllerName),
 	}
-	//r.updateStatusHandler = r.updateStatus
+
 	return r
 }
 
@@ -121,8 +121,7 @@ func addWatch(c controller.Controller) error {
 func (r *InferenceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	logger := log.WithValues("Inference", req.NamespacedName)
 
-	// 如果监听到事件的变化
-	// Fetch the inference instance
+	// 1) Fetch the inference instance
 	original := &melodyiov1alpha1.Inference{}
 	err := r.Get(ctx, req.NamespacedName, original)
 	if err != nil {
@@ -136,7 +135,7 @@ func (r *InferenceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		return reconcile.Result{}, err
 	}
 
-	//Fetch the Inference fields
+	//2) Create and reconcile inference
 	instance := original.DeepCopy()
 	// If not created, create the inference
 	if !util.IsCreatedInference(instance) {
@@ -146,8 +145,9 @@ func (r *InferenceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		}
 		msg := "Inference is created"
 		util.MarkInferenceStatusCreatedInference(instance, msg)
+
 	} else {
-		// Reconcile Inference
+		// 3) Reconcile Inference, create svc and deployment of inference, and update statuses
 		err := r.reconcileInference(instance)
 		if err != nil {
 			logger.Error(err, "Reconcile inference error")
@@ -155,7 +155,7 @@ func (r *InferenceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		}
 	}
 
-	//4) Compare status before-and-after reconciling and update changes to cluster.
+	// 4) Compare status before-and-after reconciling and update changes to cluster.
 	if !reflect.DeepEqual(original.Status, instance.Status) {
 		if err = r.Status().Update(context.Background(), instance); err != nil {
 			if errors.IsConflict(err) {
@@ -174,6 +174,7 @@ func (r *InferenceReconciler) reconcileInference(instance *melodyiov1alpha1.Infe
 	logger := log.WithValues("Inference", types.NamespacedName{Name: instance.GetName(), Namespace: instance.GetNamespace()})
 
 	logger.Info("begin reconcile inference")
+
 	// 获得期望的Service 然后Reconcile
 	service, err := r.getDesiredService(instance)
 	if err != nil {

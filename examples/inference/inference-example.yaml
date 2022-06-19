@@ -1,0 +1,23 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tf-seriving-deployment
+  labels:
+    app: tf-serving-mobilenet
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: tf-serving-mobilenet
+  template:
+    metadata:
+      labels:
+        app: tf-serving-mobilenet
+    spec:
+      containers:
+      - name: mobilenet
+        image: kubedl/morphling-tf-model:demo
+ #       ports:
+  #      - containerPort: 8500
+
+

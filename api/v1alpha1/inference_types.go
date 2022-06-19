@@ -30,14 +30,11 @@ type InferenceSpec struct {
 	// Important: Run "make" to regenerate code after modifying this file
 	Domain DomainType `json:"domain,omitempty"`
 
-	// Replicas specify the expected model serving  replicas.
+	// Replicas specify the expected model serving replicas.
 	Replicas *int32 `json:"replicas,omitempty"`
 
 	// PredictorStatuses exposes current observed status for each predictor.
 	Servings []ServingSpec `json:"servings"`
-
-	/*// The target service pod/deployment whose parameters to be tuned
-	ServicePodTemplate corev1.PodTemplate `json:"servicePodTemplate,omitempty"`*/
 }
 
 type ServingSpec struct {

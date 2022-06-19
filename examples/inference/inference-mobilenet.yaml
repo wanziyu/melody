@@ -3,7 +3,7 @@ kind: Inference
 metadata:
   name: inference-mobilenet
 spec:
-  domain: "time-series"
+  domain: "image-processing"
   replicas: 2
   servings:
     - name: mobilenet

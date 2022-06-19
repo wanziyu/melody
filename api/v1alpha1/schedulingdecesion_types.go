@@ -33,7 +33,7 @@ type SchedulingDecesionSpec struct {
 	Algorithm *SchedulingAlgorithm `json:"algorithm,omitempty"`
 
 	//SchedulingResult specifies
-	Result []SchedulingResult `json:"schedulingResult,omitempty"`
+	Objective SchedulingObjective `json:"schedulingResult,omitempty"`
 
 	ResultTime metav1.Time `json:"resultTime"`
 }
@@ -45,8 +45,9 @@ const (
 	DefaultScheduling SchedulingAlgorithm = "default"
 )
 
-type SchedulingResult struct {
+type SchedulingObjective struct {
 	Type           SchedulingType `json:"type"`
+	TargetPod      corev1.Pod     `json:"targetPod"`
 	TargetNode     corev1.Node    `json:"targetNode"`
 	ScalingReplica int32          `json:"scalingReplica"`
 }
