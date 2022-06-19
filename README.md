@@ -5,7 +5,7 @@ edge computing ML model inference on Kubernetes.
 ## Overview
 Melody uses Deep Reinforcement Learning as the scheduling algorithm, use prometheus to monitor Edge computing resources and input metrics to DQN, and obtain the optimal scheduling strategy.
 
-![](../Desktop/overview.png)
+![](../melody/docs/img/overview.png)
 
 ## Features
 key benefits include:
