@@ -1,0 +1,6 @@
+apiVersion: melody.io/v1alpha1
+kind: SchedulingDecision
+metadata:
+  name: schedulingdecision-sample
+spec:
+  # TODO(user): Add fields here

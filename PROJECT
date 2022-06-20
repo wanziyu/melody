@@ -1,0 +1,15 @@
+domain: melody.io
+layout:
+- go.kubebuilder.io/v3
+projectName: melody
+repo: melody
+resources:
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: melody.io
+  kind: SchedulingDecision
+  path: melody/api/v1alpha1
+  version: v1alpha1
+version: "3"
