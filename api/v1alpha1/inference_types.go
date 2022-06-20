@@ -106,8 +106,12 @@ const (
 	ServingKilled    ServingStatusType = "Killed"
 )
 
-//+kubebuilder:object:root=true
-//+kubebuilder:subresource:status
+// +kubebuilder:object:root=true
+// +kubebuilder:printcolumn:name="State",type=string,JSONPath=`.status.conditions[-1:].type`
+// +kubebuilder:printcolumn:name="Age",type=date,JSONPath=`.metadata.creationTimestamp`
+// +kubebuilder:printcolumn:name="Monitor-PodName",type=string,JSONPath=`.status.monitoringResult.monitoringInferences[-1:].podName`
+// +kubebuilder:printcolumn:name="Monitor-NodeName",type=string,JSONPath=`.status.monitoringResult.monitoringNodes[-1:].nodeName`
+// +kubebuilder:subresource:status
 
 // Inference is the Schema for the inferences API
 type Inference struct {
