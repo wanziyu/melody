@@ -51,8 +51,8 @@ type SchedulingDecisionStatus struct {
 	// List of observed runtime conditions for this SchedulingDecision.
 	Conditions []SchedulingCondition `json:"conditions,omitempty"`
 
-	// Current optimal parameters
-	CurrentOptimalScheduling SchedulingResult `json:"currentOptimalTrial,omitempty"`
+	// Current monitoring results
+	CurrentMonitoring []MonitoringResult `json:"currentOptimalTrial,omitempty"`
 
 	// Sampled configurations and the corresponding object values
 	SchedulingResultList []SchedulingResult `json:"trialResultList,omitempty"`
@@ -110,6 +110,10 @@ type SchedulingCondition struct {
 
 	// The last time this condition was updated.
 	LastUpdateTime metav1.Time `json:"lastUpdateTime,omitempty"`
+}
+
+type MonitoringResult struct {
+	MonitoringPods []string `json:"monitoringPods,omitempty"`
 }
 
 type SchedulingResult struct {
