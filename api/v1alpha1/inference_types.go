@@ -60,7 +60,7 @@ type InferenceStatus struct {
 	MonitorResult *MonitoringResult `json:"monitorResult,omitempty"`
 
 	// Observed runtime condition for this Inference.
-	Conditions []InferenceConditions `json:"servingStatuses,omitempty"`
+	Conditions []InferenceCondition `json:"servingStatuses,omitempty"`
 
 	// The time this inference job was started.
 	StartTime *metav1.Time `json:"startTime,omitempty"`
@@ -69,7 +69,7 @@ type InferenceStatus struct {
 	CompletionTime *metav1.Time `json:"completionTime,omitempty"`
 }
 
-type InferenceConditions struct {
+type InferenceCondition struct {
 
 	// The last time this condition was updated.
 	LastUpdateTime metav1.Time `json:"lastUpdateTime,omitempty"`
