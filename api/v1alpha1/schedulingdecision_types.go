@@ -26,11 +26,11 @@ type SchedulingDecisionSpec struct {
 	// Scheduling algorithm, e.g., A2C.
 	Algorithm AlgorithmSpec `json:"algorithm,omitempty"`
 
-	//Scheduling actions obtained from algorithm server to update inference
-	SchedulingAction SchedulingActionSpec `json:"schedulingAction,omitempty"`
+	//Scheduling decisions obtained from algorithm server to update inference
+	Decision SchedulingActionSpec `json:"decision,omitempty"`
 
 	// Maximum number of inferences
-	MaxNumInferences *int32 `json:"maxNumTrials,omitempty"`
+	MaxNumInferences *int32 `json:"maxNumInferences,omitempty"`
 
 	// Parallelism is the number of concurrent inferences.
 	Parallelism *int32 `json:"parallelism,omitempty"`
@@ -39,7 +39,7 @@ type SchedulingDecisionSpec struct {
 	RequestTemplate string `json:"requestTemplate,omitempty"`
 
 	// The target service inference needed to be better scheduled
-	ServiceInferenceTemplate InferenceSpec `json:"servicePodTemplate,omitempty"`
+	ServiceInferenceTemplate []InferenceSpec `json:"servicePodTemplate,omitempty"`
 
 	// The maximum time in seconds for a deployment to make progress before it is considered to be failed.
 	ServiceProgressDeadline *int32 `json:"serviceProgressDeadline,omitempty"`
@@ -65,7 +65,7 @@ type SchedulingDecisionStatus struct {
 	Conditions []SchedulingCondition `json:"conditions,omitempty"`
 
 	// Current monitoring results
-	CurrentMonitoring []MonitoringResult `json:"currentOptimalTrial,omitempty"`
+	CurrentMonitoring []MonitoringResult `json:"currentMonitoring,omitempty"`
 
 	// Completion time of the scheduling
 	CompletionTime *metav1.Time `json:"completionTime,omitempty"`
@@ -88,7 +88,7 @@ type SchedulingDecisionStatus struct {
 	// List of inference names which have been killed.
 	KilledInferenceList []string `json:"killedInferenceList,omitempty"`
 
-	// TrialsTotal is the total number of inference owned by the experiment.
+	// InferencesTotal is the total number of inference owned by the experiment.
 	InferencesTotal int32 `json:"inferencesTotal,omitempty"`
 
 	// How many inferences have succeeded.
@@ -123,8 +123,8 @@ type SchedulingCondition struct {
 }
 
 type MonitoringResult struct {
-	MonitoringPods  []InferencePodStatus `json:"monitoringPods,omitempty"`
-	MonitoringNodes []NodeStatus         `json:"monitoringNodes,omitempty"`
+	MonitoringInferences []InferencePodStatus `json:"monitoringPods,omitempty"`
+	MonitoringNodes      []NodeStatus         `json:"monitoringNodes,omitempty"`
 }
 
 type InferencePodStatus struct {
@@ -192,6 +192,8 @@ const (
 	CPUResource Category = "cpu"
 
 	MemResource Category = "memory"
+
+	FinishedCount Category = "count"
 
 	// Environment variables, set for service pods/deployments.
 	CategoryEnv Category = "env"

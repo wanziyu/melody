@@ -24,12 +24,8 @@ import (
 
 // InferenceSpec defines the desired state of Inference
 type InferenceSpec struct {
-
 	//Domain specify the domain of inference, such as nlp
 	Domain DomainType `json:"domain,omitempty"`
-
-	// Replicas specify the expected model serving replicas.
-	Replicas *int32 `json:"replicas,omitempty"`
 
 	// PredictorStatuses exposes current observed status for each predictor.
 	Servings []ServingSpec `json:"servings"`
@@ -37,7 +33,7 @@ type InferenceSpec struct {
 	// The request template in json format, used for testing against the REST API of target service.
 	RequestTemplate string `json:"requestTemplate,omitempty"`
 
-	// The client template to trigger the test against target service.
+	// The client template to trigger a prometheus monitoring client.
 	ClientTemplate v1beta1.JobTemplateSpec `json:"clientTemplate,omitempty"`
 }
 
@@ -60,11 +56,11 @@ type ServingSpec struct {
 
 // InferenceStatus defines the observed state of Inference
 type InferenceStatus struct {
-	// Output of the trial, including the TrialAssignment and the Objective value (e.g., QPS)
-	MonitorResult *MonitoringResult `json:"trialResult,omitempty"`
+	// Output of the Monitoring Client, including the inference running status and node status (e.g., CPU)
+	MonitorResult *MonitoringResult `json:"monitorResult,omitempty"`
 
 	// Observed runtime condition for this Inference.
-	Conditions []ServingConditions `json:"servingStatuses,omitempty"`
+	Conditions []InferenceConditions `json:"servingStatuses,omitempty"`
 
 	// The time this inference job was started.
 	StartTime *metav1.Time `json:"startTime,omitempty"`
@@ -73,16 +69,7 @@ type InferenceStatus struct {
 	CompletionTime *metav1.Time `json:"completionTime,omitempty"`
 }
 
-type ServingConditions struct {
-
-	// Name is the name of current predictor.
-	Name string `json:"name"`
-
-	// Replicas is the expected replicas of current predictor.
-	Replicas int32 `json:"replicas"`
-
-	//ReadyReplicas is the ready replicas of current predictor.
-	ReadyReplicas int32 `json:"readyReplicas"`
+type InferenceConditions struct {
 
 	// The last time this condition was updated.
 	LastUpdateTime metav1.Time `json:"lastUpdateTime,omitempty"`
