@@ -158,8 +158,13 @@ type AlgorithmSetting struct {
 	Value string `json:"value,omitempty"`
 }
 
-//+kubebuilder:object:root=true
-//+kubebuilder:subresource:status
+// +kubebuilder:object:root=true
+// +kubebuilder:printcolumn:name="State",type=string,JSONPath=`.status.conditions[-1:].type`
+// +kubebuilder:printcolumn:name="Age",type=date,JSONPath=`.metadata.creationTimestamp`
+// +kubebuilder:printcolumn:name="Optimal-Scheduling-Pod",type=string,JSONPath=`.status.currentOptimalScheduling.targetPod`
+// +kubebuilder:printcolumn:name="Optimal-Scheduling-Node",type=string,JSONPath=`.status.currentOptimalScheduling.nodeName`
+// +kubebuilder:resource:shortName="sd"
+// +kubebuilder:subresource:status
 
 // SchedulingDecision is the Schema for the schedulingdecisions API
 type SchedulingDecision struct {
@@ -170,9 +175,8 @@ type SchedulingDecision struct {
 	Status SchedulingDecisionStatus `json:"status,omitempty"`
 }
 
-//+kubebuilder:object:root=true
-
 // SchedulingDecisionList contains a list of SchedulingDecision
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 type SchedulingDecisionList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
