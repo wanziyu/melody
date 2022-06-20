@@ -61,7 +61,7 @@ type ServingSpec struct {
 // InferenceStatus defines the observed state of Inference
 type InferenceStatus struct {
 	// Output of the trial, including the TrialAssignment and the Objective value (e.g., QPS)
-	MonitorResult *SchedulingResult `json:"trialResult,omitempty"`
+	MonitorResult *MonitoringResult `json:"trialResult,omitempty"`
 
 	// Observed runtime condition for this Inference.
 	Conditions []ServingConditions `json:"servingStatuses,omitempty"`

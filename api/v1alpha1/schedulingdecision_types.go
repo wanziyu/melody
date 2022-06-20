@@ -17,7 +17,6 @@ limitations under the License.
 package v1alpha1
 
 import (
-	"k8s.io/api/batch/v1beta1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -26,6 +25,9 @@ import (
 type SchedulingDecisionSpec struct {
 	// Scheduling algorithm, e.g., A2C.
 	Algorithm AlgorithmSpec `json:"algorithm,omitempty"`
+
+	//Scheduling actions obtained from algorithm server to update inference
+	SchedulingAction SchedulingActionSpec `json:"schedulingAction,omitempty"`
 
 	// Maximum number of inferences
 	MaxNumInferences *int32 `json:"maxNumTrials,omitempty"`
@@ -36,14 +38,25 @@ type SchedulingDecisionSpec struct {
 	// The request template in json format, used for testing against the REST API of target service.
 	RequestTemplate string `json:"requestTemplate,omitempty"`
 
-	// Client Template to trigger the prometheus monitoring client against target service
-	ClientTemplate v1beta1.JobTemplateSpec `json:"clientTemplate,omitempty"`
-
 	// The target service inference needed to be better scheduled
-	ServicePodTemplate corev1.PodTemplate `json:"servicePodTemplate,omitempty"`
+	ServiceInferenceTemplate InferenceSpec `json:"servicePodTemplate,omitempty"`
 
 	// The maximum time in seconds for a deployment to make progress before it is considered to be failed.
 	ServiceProgressDeadline *int32 `json:"serviceProgressDeadline,omitempty"`
+}
+
+type SchedulingActionSpec struct {
+	// Obtained time of the scheduling action
+	ObtainedTime *metav1.Time `json:"obtainedTime,omitempty"`
+
+	// Obtained scheduling action from algorithm server
+	Actions []ActionSpec `json:"actions,omitempty"`
+}
+
+type ActionSpec struct {
+	Type       ActionType `json:"type,omitempty"`
+	TargetNode string     `json:"targetNode,omitempty"`
+	Value      string     `json:"value,omitempty"`
 }
 
 // SchedulingDecisionStatus defines the observed state of SchedulingDecision
@@ -53,9 +66,6 @@ type SchedulingDecisionStatus struct {
 
 	// Current monitoring results
 	CurrentMonitoring []MonitoringResult `json:"currentOptimalTrial,omitempty"`
-
-	// Sampled configurations and the corresponding object values
-	SchedulingResultList []SchedulingResult `json:"trialResultList,omitempty"`
 
 	// Completion time of the scheduling
 	CompletionTime *metav1.Time `json:"completionTime,omitempty"`
@@ -113,7 +123,29 @@ type SchedulingCondition struct {
 }
 
 type MonitoringResult struct {
-	MonitoringPods []string `json:"monitoringPods,omitempty"`
+	MonitoringPods  []InferencePodStatus `json:"monitoringPods,omitempty"`
+	MonitoringNodes []NodeStatus         `json:"monitoringNodes,omitempty"`
+}
+
+type InferencePodStatus struct {
+	PodName string          `json:"podName,omitempty"`
+	Metrics []PodMetricSpec `json:"metrics,omitempty"`
+}
+
+type PodMetricSpec struct {
+	Name     string   `json:"name,omitempty"`
+	Value    string   `json:"value,omitempty"`
+	Category Category `json:"category,omitempty"`
+}
+
+type NodeStatus struct {
+	NodeName string           `json:"nodeName,omitempty"`
+	Metrics  []NodeMetricSpec `json:"metrics,omitempty"`
+}
+
+type NodeMetricSpec struct {
+	Category Category `json:"category,omitempty"`
+	Value    string   `json:"value,omitempty"`
 }
 
 type SchedulingResult struct {
@@ -135,6 +167,14 @@ const (
 	SchedulingCompleted  SchedulingConditionType = "Completed"
 )
 
+type ActionType string
+
+const (
+	NodeTransferAction  ActionType = "NodeTransfer"
+	AddResourceAction   ActionType = "AddResource"
+	MinusResourceAction ActionType = "MinusResource"
+)
+
 // AlgorithmName is the supported searching algorithms
 type AlgorithmName string
 
@@ -142,6 +182,22 @@ const (
 	RLScheduling  AlgorithmName = "RLScheduling"
 	DQNScheduling AlgorithmName = "DQNScheduling"
 	GridSearch    AlgorithmName = "grid"
+)
+
+// Category of the status to be monitored,
+type Category string
+
+const (
+	// Computing resources, including cpu, memory, gpumem.
+	CPUResource Category = "cpu"
+
+	MemResource Category = "memory"
+
+	// Environment variables, set for service pods/deployments.
+	CategoryEnv Category = "env"
+
+	// Args for codes running in service pods/deployments.
+	CategoryArgs Category = "args"
 )
 
 // AlgorithmSpec is the specification of Opt. algorithm
