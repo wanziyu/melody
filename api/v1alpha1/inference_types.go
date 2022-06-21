@@ -42,15 +42,23 @@ type ServingSpec struct {
 	Name string `json:"name,omitempty"`
 
 	//Image indicates the serving instance image
-	Image string `json:"image,omitempty"`
+	// +required
+	ImageRepo string `json:"imageRepo,omitempty"`
 
 	//Node indicates the node of serving instance
+	// +optional
 	Node string `json:"node,omitempty"`
 
+	// Storage is the location where this ModelVersion is stored.
+	// +optional
+	Storage *Storage `json:"storage,omitempty"`
+
 	//ModelPath is the loaded madel filepath in model storage.
+	// +optional
 	ModelPath *string `json:"modelPath,omitempty"`
 
 	//ModelVersion specifies the name of target model version to be loaded.
+	// +optional
 	ModelVersion string `json:"modelVersion,omitempty"`
 }
 
@@ -85,6 +93,42 @@ type InferenceCondition struct {
 
 	// A description message indicating details about the transition.
 	Message string `json:"message,omitempty"`
+}
+
+type Storage struct {
+	// NFS represents the alibaba cloud nas storage
+	// +optional
+	NFS *NFS `json:"nfs,omitempty"`
+
+	// LocalStorage represents the local host storage
+	// +optional
+	LocalStorage *LocalStorage `json:"localStorage,omitempty"`
+}
+
+type NFS struct {
+	// NFS server address, e.g. "***.cn-beijing.nas.aliyuncs.com"
+	Server string `json:"server,omitempty"`
+
+	// The path under which the model is stored, e.g. /models/my_model1
+	Path string `json:"path,omitempty"`
+
+	// The mounted path inside the container.
+	// The training code is expected to export the model artifacts under this path, such as storing the tensorflow saved_model.
+	MountPath string `json:"mountPath,omitempty"`
+}
+
+type LocalStorage struct {
+	// The local host path to export the model.
+	// +required
+	Path string `json:"path,omitempty"`
+
+	// The mounted path inside the container.
+	// The training code is expected to export the model artifacts under this path, such as storing the tensorflow saved_model.
+	MountPath string `json:"mountPath,omitempty"`
+
+	// The name of the node for storing the model. This node will be where the chief worker run to export the model.
+	// +required
+	NodeName string `json:"nodeName,omitempty"`
 }
 
 type DomainType string

@@ -44,11 +44,11 @@ import (
 )
 
 const (
-	ControllerName = "inference-controller"
+	ControllerName = "InferenceController"
 )
 
 var (
-	log = logf.Log.WithName(ControllerName)
+	log = logf.Log.WithName("inference-controller")
 )
 
 // InferenceReconciler reconciles a Inference object
