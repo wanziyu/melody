@@ -1,10 +1,14 @@
 package dbclient
 
 import (
+	"google.golang.org/grpc"
 	melodyiov1alpha1 "melody/api/v1alpha1"
 	"melody/pkg/controllers/util"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"time"
+
+	"context"
+	api_pb "melody/api/v1alpha1/grpc_proto/grpc_storage/go"
 )
 
 var (
@@ -26,7 +30,7 @@ func NewInferenceDBClient() DBClient {
 
 func (t InferenceDBClient) GetMonitorResult(inference *melodyiov1alpha1.Inference) (*melodyiov1alpha1.MonitoringResult, error) {
 	// Prepare db request
-	request := prepareDBRequest(trial)
+	request := prepareDBRequest(inference)
 
 	// Dial DB storage
 	endpoint := util.GetDBStorageEndpoint()
@@ -48,11 +52,50 @@ func (t InferenceDBClient) GetMonitorResult(inference *melodyiov1alpha1.Inferenc
 	// Send request, receive reply
 	response, err := clientGRPC.GetResult(ctx, request, grpc.WaitForReady(true))
 	if err != nil {
-		log.Error(err, "Failed to get trial result from db storage")
+		log.Error(err, "Failed to get monitor result from db storage")
 		return nil, err
 	}
 
 	// Validate and convert response
-	reply := validateDBResult(trial, response)
+	reply := validateDBResult(inference, response)
 	return reply, nil
+}
+
+func validateDBResult(inference *melodyiov1alpha1.Inference, response *api_pb.GetResultReply) *melodyiov1alpha1.MonitoringResult {
+
+	reply := &melodyiov1alpha1.MonitoringResult{
+		PodMetrics:  nil,
+		NodeMetrics: nil,
+	}
+
+	reply.PodMetrics = make([]melodyiov1alpha1.PodMetricSpec, 0)
+	reply.NodeMetrics = make([]melodyiov1alpha1.NodesMetricSpec, 0)
+
+	if response != nil {
+		for _, metric := range response.Results {
+			reply.PodMetrics = append(reply.PodMetrics, melodyiov1alpha1.PodMetricSpec{
+				Name:  metric.Key,
+				Value: metric.Value,
+			})
+		}
+
+	} else {
+		log.Info("Get nil monitoring result of inference %s.%s, will save objective value as 0", inference.Name, inference.Namespace)
+
+		reply.PodMetrics = append(reply.PodMetrics, melodyiov1alpha1.PodMetricSpec{
+			Name:  "cpu",
+			Value: defaultMetricValue,
+		})
+
+	}
+
+	return reply
+}
+
+func prepareDBRequest(inference *melodyiov1alpha1.Inference) *api_pb.GetResultRequest {
+	request := &api_pb.GetResultRequest{
+		Namespace:     inference.Namespace,
+		InferenceName: inference.Name,
+	}
+	return request
 }

@@ -18,7 +18,7 @@ func GetContainerName(t *melodyiov1alpha1.Inference) string {
 	return t.Name + "-" + "container"
 }
 
-func GetStressTestJobName(t *melodyiov1alpha1.Inference) string {
+func GetMonitorJobName(t *melodyiov1alpha1.Inference) string {
 	return t.Name + "-" + "client-job"
 }
 

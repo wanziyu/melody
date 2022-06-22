@@ -123,27 +123,27 @@ type SchedulingCondition struct {
 }
 
 type MonitoringResult struct {
-	MonitoringInferences []InferencePodStatus `json:"monitoringPods,omitempty"`
-	MonitoringNodes      []NodeStatus         `json:"monitoringNodes,omitempty"`
+	PodMetrics  []PodMetricSpec   `json:"podMetrics,omitempty"`
+	NodeMetrics []NodesMetricSpec `json:"nodeMetrics,omitempty"`
 }
 
-type InferencePodStatus struct {
+/*type InferencePodMetrics struct {
 	PodName string          `json:"podName,omitempty"`
 	Metrics []PodMetricSpec `json:"metrics,omitempty"`
-}
+}*/
 
 type PodMetricSpec struct {
-	Name     string   `json:"name,omitempty"`
-	Value    string   `json:"value,omitempty"`
-	Category Category `json:"category,omitempty"`
+	Name  string `json:"name,omitempty"`
+	Value string `json:"value,omitempty"`
+	//Category Category `json:"category,omitempty"`
 }
 
-type NodeStatus struct {
-	NodeName string           `json:"nodeName,omitempty"`
-	Metrics  []NodeMetricSpec `json:"metrics,omitempty"`
+type NodesMetricSpec struct {
+	NodeName string        `json:"nodeName,omitempty"`
+	Metrics  []NodeMetrics `json:"metrics,omitempty"`
 }
 
-type NodeMetricSpec struct {
+type NodeMetrics struct {
 	Category Category `json:"category,omitempty"`
 	Value    string   `json:"value,omitempty"`
 }

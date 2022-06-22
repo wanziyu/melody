@@ -108,19 +108,19 @@ func (r *InferenceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 	}
 
 	instance := original.DeepCopy()
-	// If not created, create the trial
+	// If not created, create the inference
 	if !util.IsCreatedInference(instance) {
 		if instance.Status.StartTime == nil {
 			now := metav1.Now()
 			instance.Status.StartTime = &now
 		}
-		msg := "Trial is created"
+		msg := "Inference is created"
 		util.MarkInferenceStatusCreatedInference(instance, msg)
 	} else {
 		// Reconcile inference
 		err := r.reconcileInference(instance)
 		if err != nil {
-			logger.Error(err, "Reconcile trial error")
+			logger.Error(err, "Reconcile inference error")
 			return reconcile.Result{}, err
 		}
 	}
@@ -189,14 +189,14 @@ func addWatch(c controller.Controller) error {
 	return nil
 }
 
-//reconcileTrial reconcile the trial with core functions
-func (r *InferenceReconciler) reconcileTrial(instance *melodyiov1alpha1.Inference) error {
+//reconcileInference reconciles the inference with core functions
+func (r *InferenceReconciler) reconcileInference(instance *melodyiov1alpha1.Inference) error {
 	logger := log.WithValues("Inference", types.NamespacedName{Name: instance.GetName(), Namespace: instance.GetNamespace()})
 
 	// Get desired service, and reconcile it
 	service, err := r.getDesiredService(instance)
 	if err != nil {
-		logger.Error(err, "ML service get error")
+		logger.Error(err, "Inference service get error")
 		return err
 	}
 	// Get desired deployment
@@ -246,14 +246,14 @@ func (r *InferenceReconciler) reconcileTrial(instance *melodyiov1alpha1.Inferenc
 			return err
 		}
 	}
-	// Update trial status (conditions and results)
+	// Update inference status (conditions and results)
 	if util.IsServiceDeplomentReady(deployedDeployment.Status.Conditions) {
-		if err = r.UpdateTrialStatusByClientJob(instance, deployedJob); err != nil {
-			logger.Error(err, "Update trial status by client-side job condition error")
+		if err = r.UpdateInferenceStatusByClientJob(instance, deployedJob); err != nil {
+			logger.Error(err, "Update inference status by client-side job condition error")
 			return err
 		}
 	} else {
-		r.UpdateTrialStatusByServiceDeployment(instance, deployedDeployment)
+		r.UpdateInferenceStatusByServiceDeployment(instance, deployedDeployment)
 	}
 	return nil
 }

@@ -24,17 +24,30 @@ import (
 
 // InferenceSpec defines the desired state of Inference
 type InferenceSpec struct {
+
 	//Domain specify the domain of inference, such as nlp
 	Domain DomainType `json:"domain,omitempty"`
 
+	//Metrics MonitoringMetric `json:"metrics,omitempty"`
+	//Node indicates the node of serving instance
+	// +optional
+	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
+
 	// PredictorStatuses exposes current observed status for each predictor.
-	Servings []ServingSpec `json:"servings"`
+	ServingTemplate corev1.PodTemplate `json:"servingTemplate"`
 
 	// The request template in json format, used for testing against the REST API of target service.
 	RequestTemplate string `json:"requestTemplate,omitempty"`
 
 	// The client template to trigger a prometheus monitoring client.
 	ClientTemplate v1beta1.JobTemplateSpec `json:"clientTemplate,omitempty"`
+
+	// The maximum time in seconds for a deployment to make progress before it is considered to be failed.
+	ServiceProgressDeadline *int32 `json:"serviceProgressDeadline,omitempty"`
+}
+
+type MonitoringMetric struct {
+	MetricName string `json:"metricName,omitempty"`
 }
 
 type ServingSpec struct {
