@@ -69,23 +69,51 @@ func validateDBResult(inference *melodyiov1alpha1.Inference, response *api_pb.Ge
 	}
 
 	reply.PodMetrics = make([]melodyiov1alpha1.PodMetricSpec, 0)
-	reply.NodeMetrics = make([]melodyiov1alpha1.NodesMetricSpec, 0)
+	reply.NodeMetrics = make([]melodyiov1alpha1.NodeMetricSpec, 0)
 
 	if response != nil {
 		for _, metric := range response.Results {
-			reply.PodMetrics = append(reply.PodMetrics, melodyiov1alpha1.PodMetricSpec{
-				Name:  metric.Key,
-				Value: metric.Value,
-			})
+			if metric.Name == inference.Name {
+				reply.PodMetrics = append(reply.PodMetrics, melodyiov1alpha1.PodMetricSpec{
+					Category: melodyiov1alpha1.Category(metric.Key),
+					Value:    metric.Value,
+				})
+			} else {
+				reply.NodeMetrics = append(reply.NodeMetrics, melodyiov1alpha1.NodeMetricSpec{
+					NodeName: metric.Name,
+					Metrics:  melodyiov1alpha1.NodeMetrics{Category: melodyiov1alpha1.Category(metric.Key), Value: metric.Value},
+				})
+			}
 		}
 
 	} else {
 		log.Info("Get nil monitoring result of inference %s.%s, will save objective value as 0", inference.Name, inference.Namespace)
 
 		reply.PodMetrics = append(reply.PodMetrics, melodyiov1alpha1.PodMetricSpec{
-			Name:  "cpu",
-			Value: defaultMetricValue,
+			Category: melodyiov1alpha1.CPUUsage,
+			Value:    defaultMetricValue,
 		})
+
+		reply.PodMetrics = append(reply.PodMetrics, melodyiov1alpha1.PodMetricSpec{
+			Category: melodyiov1alpha1.MemUsage,
+			Value:    defaultMetricValue,
+		})
+
+		reply.PodMetrics = append(reply.PodMetrics, melodyiov1alpha1.PodMetricSpec{
+			Category: melodyiov1alpha1.JobCompletionTime,
+			Value:    defaultMetricValue,
+		})
+
+		for _, node := range inference.Spec.OptionalNodes {
+			reply.NodeMetrics = append(reply.NodeMetrics, melodyiov1alpha1.NodeMetricSpec{
+				NodeName: node,
+				Metrics:  melodyiov1alpha1.NodeMetrics{Category: melodyiov1alpha1.CPUResource, Value: defaultMetricValue},
+			})
+			reply.NodeMetrics = append(reply.NodeMetrics, melodyiov1alpha1.NodeMetricSpec{
+				NodeName: node,
+				Metrics:  melodyiov1alpha1.NodeMetrics{Category: melodyiov1alpha1.MemResource, Value: defaultMetricValue},
+			})
+		}
 
 	}
 

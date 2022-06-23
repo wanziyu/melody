@@ -123,8 +123,8 @@ type SchedulingCondition struct {
 }
 
 type MonitoringResult struct {
-	PodMetrics  []PodMetricSpec   `json:"podMetrics,omitempty"`
-	NodeMetrics []NodesMetricSpec `json:"nodeMetrics,omitempty"`
+	PodMetrics  []PodMetricSpec  `json:"podMetrics,omitempty"`
+	NodeMetrics []NodeMetricSpec `json:"nodeMetrics,omitempty"`
 }
 
 /*type InferencePodMetrics struct {
@@ -133,14 +133,14 @@ type MonitoringResult struct {
 }*/
 
 type PodMetricSpec struct {
-	Name  string `json:"name,omitempty"`
-	Value string `json:"value,omitempty"`
+	Category Category `json:"name,omitempty"`
+	Value    string   `json:"value,omitempty"`
 	//Category Category `json:"category,omitempty"`
 }
 
-type NodesMetricSpec struct {
-	NodeName string        `json:"nodeName,omitempty"`
-	Metrics  []NodeMetrics `json:"metrics,omitempty"`
+type NodeMetricSpec struct {
+	NodeName string      `json:"nodeName,omitempty"`
+	Metrics  NodeMetrics `json:"metrics,omitempty"`
 }
 
 type NodeMetrics struct {
@@ -192,6 +192,12 @@ const (
 	CPUResource Category = "cpu"
 
 	MemResource Category = "memory"
+
+	CPUUsage Category = "cpuUsage"
+
+	MemUsage Category = "memUsage"
+
+	JobCompletionTime Category = "jct"
 
 	FinishedCount Category = "count"
 

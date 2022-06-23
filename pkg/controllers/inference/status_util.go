@@ -29,19 +29,30 @@ func (r *InferenceReconciler) UpdateInferenceStatusByClientJob(instance *melodyi
 }
 
 func (r *InferenceReconciler) UpdateInferenceStatusByServiceDeployment(instance *melodyiov1alpha1.Inference, deployedDeployment *appsv1.Deployment) {
-	logger := log.WithValues("Trial", types.NamespacedName{Name: instance.GetName(), Namespace: instance.GetNamespace()})
+	logger := log.WithValues("Inference", types.NamespacedName{Name: instance.GetName(), Namespace: instance.GetNamespace()})
 
 	ServiceDeploymentCondition := deployedDeployment.Status.Conditions
 	if util.IsServiceDeplomentFail(ServiceDeploymentCondition) {
-		message := "Trial service pod failed"
-		objectiveMetricName := instance.Spec.Objective.ObjectiveMetricName
-		metric := morphlingv1alpha1.Metric{Name: objectiveMetricName, Value: "0.0"}
-		instance.Status.TrialResult = &morphlingv1alpha1.TrialResult{}
-		instance.Status.TrialResult.ObjectiveMetricsObserved = []morphlingv1alpha1.Metric{metric}
+		message := "Inference service pod failed"
+		cpu := melodyiov1alpha1.PodMetricSpec{Category: melodyiov1alpha1.CPUUsage, Value: "0.0"}
+		mem := melodyiov1alpha1.PodMetricSpec{Category: melodyiov1alpha1.MemUsage, Value: "0.0"}
+		jct := melodyiov1alpha1.PodMetricSpec{Category: melodyiov1alpha1.JobCompletionTime, Value: "0.0"}
+		instance.Status.MonitorResult = &melodyiov1alpha1.MonitoringResult{}
+		instance.Status.MonitorResult.PodMetrics = []melodyiov1alpha1.PodMetricSpec{cpu, mem, jct}
+
+		nodes := instance.Spec.OptionalNodes
+		instance.Status.MonitorResult.NodeMetrics = make([]melodyiov1alpha1.NodeMetricSpec, 0)
+		for _, node := range nodes {
+			cpu := melodyiov1alpha1.NodeMetricSpec{NodeName: node, Metrics: melodyiov1alpha1.NodeMetrics{Category: melodyiov1alpha1.CPUResource, Value: "0.0"}}
+			mem := melodyiov1alpha1.NodeMetricSpec{NodeName: node, Metrics: melodyiov1alpha1.NodeMetrics{Category: melodyiov1alpha1.CPUResource, Value: "0.0"}}
+			instance.Status.MonitorResult.NodeMetrics = append(instance.Status.MonitorResult.NodeMetrics, cpu)
+			instance.Status.MonitorResult.NodeMetrics = append(instance.Status.MonitorResult.NodeMetrics, mem)
+		}
+
 		util.MarkInferenceStatusFailed(instance, message)
 		logger.Info("Service deployment is failed", "name", deployedDeployment.GetName())
 	} else {
-		message := "Trial service pod pending"
+		message := "Inference service pod pending"
 		util.MarkInferenceStatusPendingTrial(instance, message)
 		logger.Info("Service deployment is pending", "name", deployedDeployment.GetName())
 	}
@@ -51,7 +62,7 @@ func (r *InferenceReconciler) UpdateInferenceStatusByServiceDeployment(instance 
 func (r *InferenceReconciler) updateInferenceStatusCondition(instance *melodyiov1alpha1.Inference, deployedJob *batchv1.Job, jobCondition []batchv1.JobCondition) {
 
 	if jobCondition == nil || instance == nil || deployedJob == nil {
-		msg := "Trial is running"
+		msg := "Inference is running"
 		util.MarkInferenceStatusRunning(instance, msg)
 		return
 	}
@@ -66,18 +77,18 @@ func (r *InferenceReconciler) updateInferenceStatusCondition(instance *melodyiov
 			eventMsg := fmt.Sprintf("Client-side stress test job %s has succeeded", deployedJob.GetName())
 			r.recorder.Eventf(instance, corev1.EventTypeNormal, "JobSucceeded", eventMsg)
 		} else {
-			// Client job has NOT recorded the trial result
-			msg := "Trial results are not available"
+			// Client job has NOT recorded the inference result
+			msg := "Inference results are not available"
 			util.MarkInferenceStatusSucceeded(instance, corev1.ConditionFalse, msg)
 		}
 	} else if util.IsJobFailed(jobCondition) {
-		// Client-side stress test job is failed
-		msg := "Client-side stress test job has failed"
+		// Client-side monitoring job is failed
+		msg := "Client-side monitoring job has failed"
 		util.MarkInferenceStatusFailed(instance, msg)
 		instance.Status.CompletionTime = &now
 	} else {
-		// Client-side stress test job is still running
-		msg := "Client-side stress test job is running"
+		// Client-side monitoring job is still running
+		msg := "Client-side monitoring job is running"
 		util.MarkInferenceStatusRunning(instance, msg)
 	}
 }
@@ -115,36 +126,55 @@ func (r *InferenceReconciler) updateInferenceResultForSucceededInference(instanc
 }
 
 func (r *InferenceReconciler) updateInferenceResultForFailedInference(instance *melodyiov1alpha1.Inference) {
+
 	instance.Status.MonitorResult = &melodyiov1alpha1.MonitoringResult{
-		MonitoringInferences: nil,
-		MonitoringNodes:      nil,
+		PodMetrics:  nil,
+		NodeMetrics: nil,
 	}
 
-	instance.Status.TrialResult.TunableParameters = make([]morphlingv1alpha1.ParameterAssignment, 0)
-	for _, assignment := range instance.Spec.SamplingResult {
-		instance.Status.TrialResult.TunableParameters = append(instance.Status.TrialResult.TunableParameters, morphlingv1alpha1.ParameterAssignment{
-			Name:     assignment.Name,
-			Value:    assignment.Value,
-			Category: assignment.Category,
+	instance.Status.MonitorResult.PodMetrics = make([]melodyiov1alpha1.PodMetricSpec, 0)
+	instance.Status.MonitorResult.NodeMetrics = make([]melodyiov1alpha1.NodeMetricSpec, 0)
+
+	instance.Status.MonitorResult.PodMetrics = append(instance.Status.MonitorResult.PodMetrics, melodyiov1alpha1.PodMetricSpec{
+		Category: melodyiov1alpha1.CPUUsage,
+		Value:    consts.DefaultMetricValue,
+	})
+
+	instance.Status.MonitorResult.PodMetrics = append(instance.Status.MonitorResult.PodMetrics, melodyiov1alpha1.PodMetricSpec{
+		Category: melodyiov1alpha1.MemUsage,
+		Value:    consts.DefaultMetricValue,
+	})
+
+	instance.Status.MonitorResult.PodMetrics = append(instance.Status.MonitorResult.PodMetrics, melodyiov1alpha1.PodMetricSpec{
+		Category: melodyiov1alpha1.JobCompletionTime,
+		Value:    consts.DefaultMetricValue,
+	})
+
+	for _, node := range instance.Spec.OptionalNodes {
+		instance.Status.MonitorResult.NodeMetrics = append(instance.Status.MonitorResult.NodeMetrics, melodyiov1alpha1.NodeMetricSpec{
+			NodeName: node,
+			Metrics:  melodyiov1alpha1.NodeMetrics{Category: melodyiov1alpha1.CPUResource, Value: consts.DefaultMetricValue},
+		})
+		instance.Status.MonitorResult.NodeMetrics = append(instance.Status.MonitorResult.NodeMetrics, melodyiov1alpha1.NodeMetricSpec{
+			NodeName: node,
+			Metrics:  melodyiov1alpha1.NodeMetrics{Category: melodyiov1alpha1.MemResource, Value: consts.DefaultMetricValue},
 		})
 	}
-	instance.Status.TrialResult.ObjectiveMetricsObserved = append(instance.Status.TrialResult.ObjectiveMetricsObserved, morphlingv1alpha1.Metric{
-		Name:  instance.Spec.Objective.ObjectiveMetricName,
-		Value: consts.DefaultMetricValue,
-	})
 }
 
 func isInferenceResultAvailable(instance *melodyiov1alpha1.Inference) bool {
-	if instance == nil || &instance.Spec.Objective == nil || &instance.Spec.Objective.ObjectiveMetricName == nil {
+	if instance == nil || &instance.Spec.OptionalNodes == nil || &instance.Spec.ServingTemplate == nil {
 		return false
 	}
+
 	// Get the name of the objective metric
-	objectiveMetricName := instance.Spec.Objective.ObjectiveMetricName
-	if instance.Status.TrialResult != nil {
-		if instance.Status.TrialResult.ObjectiveMetricsObserved != nil {
-			for _, metric := range instance.Status.TrialResult.ObjectiveMetricsObserved {
+	targetNode := instance.Spec.OptionalNodes[0]
+
+	if instance.Status.MonitorResult != nil {
+		if instance.Status.MonitorResult.NodeMetrics != nil {
+			for _, metric := range instance.Status.MonitorResult.NodeMetrics {
 				// Find the objective metric record from trail status
-				if metric.Name == objectiveMetricName {
+				if metric.NodeName == targetNode {
 					return true
 				}
 			}

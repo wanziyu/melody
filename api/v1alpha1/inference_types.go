@@ -28,6 +28,7 @@ type InferenceSpec struct {
 	//Domain specify the domain of inference, such as nlp
 	Domain DomainType `json:"domain,omitempty"`
 
+	OptionalNodes []string `json:"optionalNodes,omitempty"`
 	//Metrics MonitoringMetric `json:"metrics,omitempty"`
 	//Node indicates the node of serving instance
 	// +optional
