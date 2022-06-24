@@ -13,7 +13,6 @@ import (
 	"melody/pkg/controllers/util"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
-	"strings"
 	"time"
 )
 
@@ -101,13 +100,10 @@ func (r *InferenceReconciler) getDesiredJobSpec(instance *melodyiov1alpha1.Infer
 func appendJobEnv(t *melodyiov1alpha1.Inference, env []corev1.EnvVar) []corev1.EnvVar {
 	env = append(env, corev1.EnvVar{Name: "RequestTemplate", Value: fmt.Sprintf(t.Spec.RequestTemplate)})
 	env = append(env, corev1.EnvVar{Name: "ServiceName", Value: util.GetServiceEndpoint(t)})
-	env = append(env, corev1.EnvVar{Name: "TrialName", Value: fmt.Sprintf(t.Name)})
+	env = append(env, corev1.EnvVar{Name: "InferenceName", Value: fmt.Sprintf(t.Name)})
 	env = append(env, corev1.EnvVar{Name: "Namespace", Value: fmt.Sprintf(t.Namespace)})
 	env = append(env, corev1.EnvVar{Name: "DBNamespace", Value: fmt.Sprintf(consts.DefaultControllerNamespace)})
 	env = append(env, corev1.EnvVar{Name: "DBPort", Value: fmt.Sprintf(consts.DefaultMelodyDBManagerServicePort)})
-	for _, cat := range t.Spec.SamplingResult {
-		name := strings.ReplaceAll(strings.ToUpper(cat.Name), ".", "_")
-		env = append(env, corev1.EnvVar{Name: name, Value: fmt.Sprintf(cat.Value)})
-	}
+
 	return env
 }

@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: melody-mysql
+  namespace: melody-system
+  labels:
+    app: melody
+    component: mysql
+spec:
+  type: ClusterIP
+  ports:
+    - port: 3306
+      protocol: TCP
+      name: dbapi
+  selector:
+    app: melody
+    component: mysql

@@ -1,0 +1,63 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: melody-mysql
+  namespace: melody-system
+  labels:
+    app: melody
+    component: mysql
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: melody
+      component: mysql
+  template:
+    metadata:
+      name: melody-mysql
+      labels:
+        app: melody
+        component: mysql
+    spec:
+      containers:
+        - name: melody-mysql
+          image: mysql/mysql-server:8.0.26
+          imagePullPolicy: Always
+          args:
+            - --datadir
+            - /var/lib/mysql/datadir
+          env:
+            - name: MYSQL_ROOT_PASSWORD
+              value: "melody"
+            - name: MYSQL_ALLOW_EMPTY_PASSWORD
+              value: "true"
+            - name: MYSQL_DATABASE
+              value: "melody"
+          ports:
+            - name: dbapi
+              containerPort: 3306
+          readinessProbe:
+            exec:
+              command:
+                - "/bin/bash"
+                - "-c"
+                - "mysql -D ${MYSQL_DATABASE} -u root -p${MYSQL_ROOT_PASSWORD} -e 'SELECT 1'"
+            initialDelaySeconds: 60
+            periodSeconds: 50
+            timeoutSeconds: 25
+          livenessProbe:
+            exec:
+              command:
+                - "/bin/bash"
+                - "-c"
+                - "mysqladmin ping -u root -p${MYSQL_ROOT_PASSWORD}"
+            initialDelaySeconds: 60
+            periodSeconds: 50
+            timeoutSeconds: 25
+          volumeMounts:
+            - name: melody-mysql
+              mountPath: /var/lib/mysql
+      volumes:
+        - name: melody-mysql
+          persistentVolumeClaim:
+            claimName: melody-mysql
