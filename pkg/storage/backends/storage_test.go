@@ -14,7 +14,7 @@ var (
 	dbInterface StorageBackend
 )
 
-const dbHost = "127.0.0.1"
+const dbHost = "10.1.0.20"
 
 func TestMain(m *testing.M) {
 	err := os.Setenv("MYSQL_HOST", dbHost)
