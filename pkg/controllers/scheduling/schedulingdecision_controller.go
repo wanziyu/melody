@@ -54,7 +54,7 @@ func NewReconciler(mgr manager.Manager) *SchedulingDecisionReconciler {
 		Scheme:   mgr.GetScheme(),
 		recorder: mgr.GetEventRecorderFor(ControllerName),
 	}
-	r.Sampling = sampling_client.New(mgr.GetScheme(), mgr.GetClient())
+	r.Sampling = sche_client.New(mgr.GetScheme(), mgr.GetClient())
 	r.updateStatusHandler = r.updateStatus
 	return r
 }

@@ -1,0 +1,54 @@
+syntax = "proto3";
+package api.suggestion;
+option go_package = "../grpc_algorithm/go";
+//import "google/api/annotations.proto";
+
+service Suggestion {
+  rpc GetSuggestions(SchedulingRequest) returns (SchedulingResponse);
+  //rpc ValidateAlgorithmSettings(SchedulingValidationRequest) returns (SchedulingValidationResponse);
+}
+
+message SchedulingDecision {
+  string InferenceName = 1;
+  string TargetNode  = 2;
+  repeated KeyValue resource = 3;
+}
+
+message KeyValue {
+  string key = 1;
+  float  value = 2;
+}
+
+
+message SchedulingRequest {
+  bool is_first_request = 1;
+  string  inference_name = 2;
+  string  algorithm_name = 3;
+  MonitoringResult monitor_result = 4;
+}
+
+
+message  MonitoringResult {
+  string   targetPod = 1;
+  repeated PodStatus pod_status = 2;
+  repeated NodeStatus node_status = 3;
+
+}
+
+message PodStatus {
+  repeated KeyValue status = 1;
+}
+
+message NodeStatus {
+  string NodeName = 1;
+  repeated KeyValue status = 2;
+
+}
+
+message SchedulingResponse {
+  repeated SchedulingDecision scheduling_decisions = 1;
+}
+
+
+
+

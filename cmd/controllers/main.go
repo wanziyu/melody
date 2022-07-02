@@ -66,7 +66,8 @@ func main() {
 	}
 
 	// Start the Cmd
-	setupLog.Info("Starting manager")
+	setupLog.Info("Starting m" +
+		"anager")
 	if err := mgr.Start(ctrl.SetupSignalHandler()); err != nil {
 		setupLog.Error(err, "problem running manager")
 		os.Exit(1)

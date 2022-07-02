@@ -149,10 +149,21 @@ type NodeMetrics struct {
 }
 
 type SchedulingResult struct {
-	// The scheduling target inference instance
-	TargetPod string `json:"targetPod,omitempty"`
 	// The target scheduling edge node for target pod
-	NodeName string `json:"nodeName,omitempty"`
+	InferenceName string `json:"inferenceName,omitempty"`
+
+	//The target node scheduled
+	TargetNode string `json:"targetNode,omitempty"`
+
+	// Scheduling results
+	ResourceAssignments []ResourceAssignment `json:"parameterAssignments,omitempty"`
+}
+
+// ResourceAssignment defines the current hyper-parameter value (key-value pair)
+type ResourceAssignment struct {
+	Name     string   `json:"name,omitempty"`
+	Value    string   `json:"value,omitempty"`
+	Category Category `json:"category,omitempty"`
 }
 
 // SchedulingConditionType defines the status of the SchedulingDecision
