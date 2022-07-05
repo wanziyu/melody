@@ -24,6 +24,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/tools/record"
+	"melody/pkg/controllers/scheduling/scheduling_client"
 	"melody/pkg/controllers/util"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
@@ -54,7 +55,7 @@ func NewReconciler(mgr manager.Manager) *SchedulingDecisionReconciler {
 		Scheme:   mgr.GetScheme(),
 		recorder: mgr.GetEventRecorderFor(ControllerName),
 	}
-	r.Sampling = sche_client.New(mgr.GetScheme(), mgr.GetClient())
+	r.Sampling = scheduling_client.New(mgr.GetScheme(), mgr.GetClient())
 	r.updateStatusHandler = r.updateStatus
 	return r
 }

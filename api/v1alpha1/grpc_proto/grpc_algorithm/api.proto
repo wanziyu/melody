@@ -16,7 +16,7 @@ message SchedulingDecision {
 
 message KeyValue {
   string key = 1;
-  float  value = 2;
+  string  value = 2;
 }
 
 

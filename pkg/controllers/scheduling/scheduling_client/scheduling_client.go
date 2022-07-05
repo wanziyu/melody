@@ -6,7 +6,6 @@ import (
 	"google.golang.org/grpc"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
-	utilrand "k8s.io/apimachinery/pkg/util/rand"
 	grpcapi "melody/api/v1alpha1/grpc_proto/grpc_algorithm/go"
 	"melody/pkg/controllers/consts"
 	"time"
@@ -44,8 +43,8 @@ func (g *General) GetScheduling(requestNum int32, instance *melodyv1alpha1.Sched
 		return nil, err
 	}
 
-	if (instance.Spec.MaxNumTrials != nil) && (requestNum+currentCount > *instance.Spec.MaxNumTrials) {
-		err := fmt.Errorf("request samplings should smaller than MaxNumTrials")
+	if (instance.Spec.MaxNumInferences != nil) && (requestNum+currentCount > *instance.Spec.MaxNumInferences) {
+		err := fmt.Errorf("request samplings should smaller than MaxNumInferences")
 		return nil, err
 	}
 
@@ -75,27 +74,50 @@ func (g *General) GetScheduling(requestNum int32, instance *melodyv1alpha1.Sched
 		return nil, err
 	}
 
-	if len(response.AssignmentsSet) != int(requestNum) {
-		err := fmt.Errorf("the response contains unexpected trials")
-		logger.Error(err, "The response contains unexpected trials", "requestNum", requestNum, "response", response)
+	if len(response.SchedulingDecisions) != int(requestNum) {
+		err := fmt.Errorf("the response contains unexpected inferences")
+		logger.Error(err, "The response contains unexpected inferences", "requestNum", requestNum, "response", response)
 		return nil, err
 	}
 
 	// Succeeded
-	logger.V(0).Info("Getting samplings", "endpoint", endpoint, "response", response.String(), "request", request)
-	assignment := make([]melodyv1alpha1.ResourceAssignment, 0)
-	for _, t := range response.AssignmentsSet {
-		assignment = append(assignment,
-			morphlingv1alpha1.TrialAssignment{
-				Name:                 fmt.Sprintf("%s-%s", instance.Name, utilrand.String(8)), // grid id
-				ParameterAssignments: composeParameterAssignments(t.KeyValues, instance.Spec.TunableParameters),
+	logger.V(0).Info("Getting scheduling decisions", "endpoint", endpoint, "response", response.String(), "request", request)
+	results := make([]melodyv1alpha1.SchedulingResult, 0)
+	for _, t := range response.SchedulingDecisions {
+		results = append(results,
+			melodyv1alpha1.SchedulingResult{
+				InferenceName: t.InferenceName, // inference name
+				TargetNode:    t.TargetNode,
+				//ResourceAssignments:  t.Resource
+				ResourceAssignments: composeResourceAssignments(t.Resource),
 			})
 	}
-	return assignment, nil
+	return results, nil
 }
 
-func newSchedulingRequest(requestNum int32, instance *morphlingv1alpha1.ProfilingExperiment, currentCount int32, trials []morphlingv1alpha1.Trial) (*grpcapi.SamplingRequest, error) {
-	request := &grpcapi.SamplingRequest{
+func composeResourceAssignments(pas []*grpcapi.KeyValue) []melodyv1alpha1.ResourceAssignment {
+
+	res := make([]melodyv1alpha1.ResourceAssignment, 0)
+
+	for _, pa := range pas {
+		categoryThis := melodyv1alpha1.MemResource
+		if pa.Key != string(categoryThis) {
+			categoryThis = melodyv1alpha1.CPUResource
+		}
+
+		res = append(res, melodyv1alpha1.ResourceAssignment{
+			Name:     pa.Key,
+			Value:    pa.Value,
+			Category: categoryThis,
+			//todo: Category
+		})
+	}
+	return res
+
+}
+
+func newSchedulingRequest(requestNum int32, instance *melodyv1alpha1.SchedulingDecision, currentCount int32, inferences []melodyv1alpha1.Inference) (*grpcapi.SchedulingRequest, error) {
+	request := &grpcapi.SchedulingRequest{
 		AlgorithmName:    string(instance.Spec.Algorithm.AlgorithmName),
 		RequiredSampling: requestNum,
 	}
