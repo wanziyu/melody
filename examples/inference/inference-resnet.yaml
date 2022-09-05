@@ -4,7 +4,7 @@ metadata:
   name: inference-sample
 spec:
   domain: time-series-prediction
-  serviceTemplate:
+  servingTemplate:
     metadata: { }
     template:
       metadata: { }
@@ -30,13 +30,13 @@ spec:
             resources:
               limits:
                 nvidia.com/gpu: 1
-            volumeMounts:
-              - name: trainingdata
-                mountPath: "/mnt/blob/data"
-      volumes:
-        - name: trainingdata
-          persistentVolumeClaim:
-            claimName: pvc-torch-checkpoint
+           # volumeMounts:
+           #   - name: trainingdata
+            #    mountPath: "/mnt/blob/data"
+     # volumes:
+      #  - name: trainingdata
+        #  persistentVolumeClaim:
+        #    claimName: pvc-torch-checkpoint
   clientTemplate:
     metadata:
       name: batch-job

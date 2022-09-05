@@ -18,7 +18,7 @@ const (
 	// DefaultMetricValue is the default trial result value, set for failed trials
 	DefaultMetricValue = "0.0"
 	// DefaultSamplingService is the default algorithm k8s service name
-	DefaultSamplingService = "morphling-algorithm-server"
+	DefaultSamplingService = "melody-algorithm-server"
 	// DefaultSamplingPort is the default port of algorithm service.
 	DefaultSamplingPort = 9996
 	// DefaultMorphlingMySqlServiceName is the default mysql k8s service name
@@ -31,7 +31,7 @@ const (
 	DefaultMelodyInfluxDBUser            = "melody"
 	DefaultMelodyInferenceMetricDatabase = "inference_metrics"
 	DefaultMelodyPodMetricMeasurement    = "pod_metrics"
-	DefaultMelodyInfluxDBAddress         = "10.104.191.181"
+	DefaultMelodyInfluxDBAddress         = "http://10.104.191.181:8086"
 )
 
 var (

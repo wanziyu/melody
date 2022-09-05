@@ -82,9 +82,9 @@ func (r *InferenceReconciler) updateStatus(instance *melodyiov1alpha1.Inference)
 	return nil
 }
 
-//+kubebuilder:rbac:groups=melody.io,resources=inferences,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=melody.io,resources=inferences/status,verbs=get;update;patch
-//+kubebuilder:rbac:groups=melody.io,resources=inferences/finalizers,verbs=update
+// +kubebuilder:rbac:groups=melody.io,resources=inferences,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=melody.io,resources=inferences/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=melody.io,resources=inferences/finalizers,verbs=update
 // +kubebuilder:rbac:groups=apps,resources=deployments,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=apps,resources=deployments/status,verbs=get;update;patch
 

@@ -2,7 +2,7 @@ package main
 
 import (
 	"flag"
-	"k8s.io/client-go/tools/clientcmd/api"
+	"melody/api"
 	melodyiov1alpha1 "melody/api/v1alpha1"
 	"os"
 

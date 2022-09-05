@@ -1,0 +1,37 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: melody-controller
+  namespace: melody-system
+  labels:
+    app: melody-controller
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: melody-controller
+  template:
+    metadata:
+      labels:
+        app: melody-controller
+      annotations:
+        prometheus.io/scrape: 'true'
+    spec:
+      serviceAccountName: melody-controller
+      containers:
+        - name: melody-controller
+          image: wanziyu/melody-controllers:v1.0
+          imagePullPolicy: Always
+          command: ["./melody-controller"]
+          ports:
+            - containerPort: 8443
+              name: webhook
+              protocol: TCP
+            - containerPort: 8080
+              name: metrics
+              protocol: TCP
+          env:
+            - name: MELODY_CORE_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace

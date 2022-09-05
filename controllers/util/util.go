@@ -1,7 +1,6 @@
 package util
 
 import (
-	"fmt"
 	appsv1 "k8s.io/api/apps/v1"
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -162,19 +161,6 @@ func IsKilledInference(inference *melodyv1alpha1.Inference) bool {
 
 func IsPendingInference(inference *melodyv1alpha1.Inference) bool {
 	return hasConditionInference(inference, melodyv1alpha1.ServingPending)
-}
-
-// genPredictorName generate predictor name formatted as {inference name}-{predictor name}.
-func genPredictorName(inf *melodyv1alpha1.Inference, predictor *melodyv1alpha1.ServingSpec) string {
-	return fmt.Sprintf("%s-%s", inf.Name, predictor.Name)
-}
-
-func SvcHostForInference(inf *melodyv1alpha1.Inference) string {
-	return fmt.Sprintf("%s.%s", inf.Name, inf.Namespace)
-}
-
-func SvcHostForPredictor(inf *melodyv1alpha1.Inference, predictor *melodyv1alpha1.ServingSpec) string {
-	return fmt.Sprintf("%s.%s.svc", genPredictorName(inf, predictor), inf.Namespace)
 }
 
 func ServiceDeploymentLabels(instance *melodyv1alpha1.Inference) map[string]string {
