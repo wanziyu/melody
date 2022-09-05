@@ -8,7 +8,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	melodyiov1alpha1 "melody/api/v1alpha1"
-	"melody/controllers/const"
 	"melody/controllers/util"
 )
 
@@ -34,9 +33,10 @@ func (r *InferenceReconciler) UpdateInferenceStatusByServiceDeployment(instance 
 	ServiceDeploymentCondition := deployedDeployment.Status.Conditions
 	if util.IsServiceDeplomentFail(ServiceDeploymentCondition) {
 		message := "Inference service pod failed"
-		cpu := melodyiov1alpha1.PodMetrics{Category: melodyiov1alpha1.CPUUsage, Value: consts.DefaultMetricValue}
-		mem := melodyiov1alpha1.PodMetrics{Category: melodyiov1alpha1.MemUsage, Value: consts.DefaultMetricValue}
-		jct := melodyiov1alpha1.PodMetrics{Category: melodyiov1alpha1.JobCompletionTime, Value: consts.DefaultMetricValue}
+		values := make([]string, 0)
+		cpu := melodyiov1alpha1.PodMetrics{Category: melodyiov1alpha1.CPUUsage, Value: values}
+		mem := melodyiov1alpha1.PodMetrics{Category: melodyiov1alpha1.MemUsage, Value: values}
+		jct := melodyiov1alpha1.PodMetrics{Category: melodyiov1alpha1.JobCompletionTime, Value: values}
 		instance.Status.MonitorResult = &melodyiov1alpha1.MonitoringResult{}
 		//pods, _ := r.GetPodsForJob(instance)
 		instance.Status.MonitorResult.PodMetrics.PodName = instance.Name
@@ -131,15 +131,15 @@ func (r *InferenceReconciler) updateInferenceResultForFailedInference(instance *
 
 	instance.Status.MonitorResult = &melodyiov1alpha1.MonitoringResult{}
 	instance.Status.MonitorResult.NodeMetrics = make([]melodyiov1alpha1.NodeMetricSpec, 0)
-
-	cpu := melodyiov1alpha1.PodMetrics{Category: melodyiov1alpha1.CPUUsage, Value: consts.DefaultMetricValue}
-	mem := melodyiov1alpha1.PodMetrics{Category: melodyiov1alpha1.MemUsage, Value: consts.DefaultMetricValue}
-	jct := melodyiov1alpha1.PodMetrics{Category: melodyiov1alpha1.JobCompletionTime, Value: consts.DefaultMetricValue}
+	values := make([]string, 0)
+	cpu := melodyiov1alpha1.PodMetrics{Category: melodyiov1alpha1.CPUUsage, Value: values}
+	mem := melodyiov1alpha1.PodMetrics{Category: melodyiov1alpha1.MemUsage, Value: values}
+	jct := melodyiov1alpha1.PodMetrics{Category: melodyiov1alpha1.JobCompletionTime, Value: values}
 	//pods, _ := r.GetPodsForJob(instance)
 	instance.Status.MonitorResult.PodMetrics.PodName = instance.Name
 	instance.Status.MonitorResult.PodMetrics.Metrics = []melodyiov1alpha1.PodMetrics{cpu, mem, jct}
 
-	for _, node := range instance.Spec.OptionalNodes {
+	/*	for _, node := range instance.Spec.OptionalNodes {
 		instance.Status.MonitorResult.NodeMetrics = append(instance.Status.MonitorResult.NodeMetrics, melodyiov1alpha1.NodeMetricSpec{
 			NodeName: node,
 			Metrics:  melodyiov1alpha1.NodeMetrics{Category: melodyiov1alpha1.CPUResource, Value: consts.DefaultMetricValue},
@@ -148,7 +148,7 @@ func (r *InferenceReconciler) updateInferenceResultForFailedInference(instance *
 			NodeName: node,
 			Metrics:  melodyiov1alpha1.NodeMetrics{Category: melodyiov1alpha1.MemResource, Value: consts.DefaultMetricValue},
 		})
-	}
+	}*/
 }
 
 func isInferenceResultAvailable(instance *melodyiov1alpha1.Inference) bool {

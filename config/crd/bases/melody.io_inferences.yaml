@@ -6003,7 +6003,7 @@ spec:
               completionTime:
                 format: date-time
                 type: string
-              monitorResult:
+              monitoringResult:
                 properties:
                   nodeMetrics:
                     items:
@@ -6027,23 +6027,25 @@ spec:
                     type: array
                   podMetrics:
                     properties:
+                      inferenceName:
+                        type: string
                       metrics:
                         items:
                           properties:
                             category:
                               type: string
                             value:
-                              type: string
+                              items:
+                                type: string
+                              type: array
                           required:
                           - category
                           - value
                           type: object
                         type: array
-                      podName:
-                        type: string
                     required:
+                    - inferenceName
                     - metrics
-                    - podName
                     type: object
                 type: object
               servingStatuses:

@@ -45,7 +45,7 @@ type InferenceSpec struct {
 // InferenceStatus defines the observed state of Inference
 type InferenceStatus struct {
 	// Output of the Monitoring Client, including the inference running status and node status (e.g., CPU)
-	MonitorResult *MonitoringResult `json:"monitorResult,omitempty"`
+	MonitorResult *MonitoringResult `json:"monitoringResult,omitempty"`
 
 	// Observed runtime condition for this Inference.
 	Conditions []InferenceCondition `json:"servingStatuses,omitempty"`
@@ -69,7 +69,7 @@ type MonitoringResult struct {
 //PodMetricSpec describes pod  metrics.
 type PodMetricSpec struct {
 	//Name
-	PodName string `json:"podName"`
+	PodName string `json:"inferenceName"`
 	//Metrics
 	Metrics []PodMetrics `json:"metrics"`
 }
@@ -77,7 +77,7 @@ type PodMetricSpec struct {
 // PodMetrics describes pod  metrics.
 type PodMetrics struct {
 	Category MetricType `json:"category"`
-	Value    string     `json:"value"`
+	Value    []string   `json:"value"`
 }
 
 // NodeMetricSpec describes node metrics.
@@ -96,15 +96,12 @@ type NodeMetrics struct {
 type MetricType string
 
 const (
-	CPUResource MetricType = "cpu"
-
-	MemResource MetricType = "memory"
-
-	CPUUsage MetricType = "cpuUsage"
-
-	MemUsage MetricType = "memUsage"
-
-	JobCompletionTime MetricType = "jct"
+	// CPUUsage represents runtime cpu usage by inference pod.
+	CPUUsage MetricType = "CPU Usage"
+	// MemUsage represents runtime memory usage by inference pod.
+	MemUsage MetricType = "Memory Usage"
+	// JobCompletionTime represents the completion time for this inference job.
+	JobCompletionTime MetricType = "Job Completion Time"
 )
 
 type InferenceCondition struct {
