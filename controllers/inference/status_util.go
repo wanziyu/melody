@@ -34,20 +34,22 @@ func (r *InferenceReconciler) UpdateInferenceStatusByServiceDeployment(instance 
 	ServiceDeploymentCondition := deployedDeployment.Status.Conditions
 	if util.IsServiceDeplomentFail(ServiceDeploymentCondition) {
 		message := "Inference service pod failed"
-		cpu := melodyiov1alpha1.PodMetricSpec{PodName: instance.Name, Metrics: melodyiov1alpha1.PodMetrics{Category: melodyiov1alpha1.CPUResource, Value: "0.0"}}
-		mem := melodyiov1alpha1.PodMetricSpec{PodName: instance.Name, Metrics: melodyiov1alpha1.PodMetrics{Category: melodyiov1alpha1.MemResource, Value: "0.0"}}
-		jct := melodyiov1alpha1.PodMetricSpec{PodName: instance.Name, Metrics: melodyiov1alpha1.PodMetrics{Category: melodyiov1alpha1.JobCompletionTime, Value: "0.0"}}
+		cpu := melodyiov1alpha1.PodMetrics{Category: melodyiov1alpha1.CPUUsage, Value: consts.DefaultMetricValue}
+		mem := melodyiov1alpha1.PodMetrics{Category: melodyiov1alpha1.MemUsage, Value: consts.DefaultMetricValue}
+		jct := melodyiov1alpha1.PodMetrics{Category: melodyiov1alpha1.JobCompletionTime, Value: consts.DefaultMetricValue}
 		instance.Status.MonitorResult = &melodyiov1alpha1.MonitoringResult{}
-		instance.Status.MonitorResult.PodMetrics = []melodyiov1alpha1.PodMetricSpec{cpu, mem, jct}
+		//pods, _ := r.GetPodsForJob(instance)
+		instance.Status.MonitorResult.PodMetrics.PodName = instance.Name
+		instance.Status.MonitorResult.PodMetrics.Metrics = []melodyiov1alpha1.PodMetrics{cpu, mem, jct}
 
-		nodes := instance.Spec.OptionalNodes
-		instance.Status.MonitorResult.NodeMetrics = make([]melodyiov1alpha1.NodeMetricSpec, 0)
-		for _, node := range nodes {
-			cpu := melodyiov1alpha1.NodeMetricSpec{NodeName: node, Metrics: melodyiov1alpha1.NodeMetrics{Category: melodyiov1alpha1.CPUResource, Value: "0.0"}}
-			mem := melodyiov1alpha1.NodeMetricSpec{NodeName: node, Metrics: melodyiov1alpha1.NodeMetrics{Category: melodyiov1alpha1.CPUResource, Value: "0.0"}}
-			instance.Status.MonitorResult.NodeMetrics = append(instance.Status.MonitorResult.NodeMetrics, cpu)
-			instance.Status.MonitorResult.NodeMetrics = append(instance.Status.MonitorResult.NodeMetrics, mem)
-		}
+		/*		nodes := instance.Spec.OptionalNodes
+				instance.Status.MonitorResult.NodeMetrics = make([]melodyiov1alpha1.NodeMetricSpec, 0)
+				for _, node := range nodes {
+					cpu := melodyiov1alpha1.NodeMetricSpec{NodeName: node, Metrics: melodyiov1alpha1.NodeMetrics{Category: melodyiov1alpha1.CPUResource, Value: "0.0"}}
+					mem := melodyiov1alpha1.NodeMetricSpec{NodeName: node, Metrics: melodyiov1alpha1.NodeMetrics{Category: melodyiov1alpha1.CPUResource, Value: "0.0"}}
+					instance.Status.MonitorResult.NodeMetrics = append(instance.Status.MonitorResult.NodeMetrics, cpu)
+					instance.Status.MonitorResult.NodeMetrics = append(instance.Status.MonitorResult.NodeMetrics, mem)
+				}*/
 
 		util.MarkInferenceStatusFailed(instance, message)
 		logger.Info("Service deployment is failed", "name", deployedDeployment.GetName())
@@ -127,37 +129,15 @@ func (r *InferenceReconciler) updateInferenceResultForSucceededInference(instanc
 
 func (r *InferenceReconciler) updateInferenceResultForFailedInference(instance *melodyiov1alpha1.Inference) {
 
-	instance.Status.MonitorResult = &melodyiov1alpha1.MonitoringResult{
-		PodMetrics:  nil,
-		NodeMetrics: nil,
-	}
-
-	instance.Status.MonitorResult.PodMetrics = make([]melodyiov1alpha1.PodMetricSpec, 0)
+	instance.Status.MonitorResult = &melodyiov1alpha1.MonitoringResult{}
 	instance.Status.MonitorResult.NodeMetrics = make([]melodyiov1alpha1.NodeMetricSpec, 0)
 
-	instance.Status.MonitorResult.PodMetrics = append(instance.Status.MonitorResult.PodMetrics, melodyiov1alpha1.PodMetricSpec{
-		PodName: instance.Name,
-		Metrics: melodyiov1alpha1.PodMetrics{
-			Category: melodyiov1alpha1.CPUUsage,
-			Value:    consts.DefaultMetricValue,
-		},
-	})
-
-	instance.Status.MonitorResult.PodMetrics = append(instance.Status.MonitorResult.PodMetrics, melodyiov1alpha1.PodMetricSpec{
-		PodName: instance.Name,
-		Metrics: melodyiov1alpha1.PodMetrics{
-			Category: melodyiov1alpha1.MemUsage,
-			Value:    consts.DefaultMetricValue,
-		},
-	})
-
-	instance.Status.MonitorResult.PodMetrics = append(instance.Status.MonitorResult.PodMetrics, melodyiov1alpha1.PodMetricSpec{
-		PodName: instance.Name,
-		Metrics: melodyiov1alpha1.PodMetrics{
-			Category: melodyiov1alpha1.JobCompletionTime,
-			Value:    consts.DefaultMetricValue,
-		},
-	})
+	cpu := melodyiov1alpha1.PodMetrics{Category: melodyiov1alpha1.CPUUsage, Value: consts.DefaultMetricValue}
+	mem := melodyiov1alpha1.PodMetrics{Category: melodyiov1alpha1.MemUsage, Value: consts.DefaultMetricValue}
+	jct := melodyiov1alpha1.PodMetrics{Category: melodyiov1alpha1.JobCompletionTime, Value: consts.DefaultMetricValue}
+	//pods, _ := r.GetPodsForJob(instance)
+	instance.Status.MonitorResult.PodMetrics.PodName = instance.Name
+	instance.Status.MonitorResult.PodMetrics.Metrics = []melodyiov1alpha1.PodMetrics{cpu, mem, jct}
 
 	for _, node := range instance.Spec.OptionalNodes {
 		instance.Status.MonitorResult.NodeMetrics = append(instance.Status.MonitorResult.NodeMetrics, melodyiov1alpha1.NodeMetricSpec{
@@ -179,13 +159,13 @@ func isInferenceResultAvailable(instance *melodyiov1alpha1.Inference) bool {
 	// Get the name of the objective metric
 	targetInferenceName := instance.Name
 	if instance.Status.MonitorResult != nil {
-		if instance.Status.MonitorResult.PodMetrics != nil {
-			for _, metric := range instance.Status.MonitorResult.PodMetrics {
-				// Find the objective metric record from trail status
-				if metric.PodName == targetInferenceName {
-					return true
-				}
+		if instance.Status.MonitorResult.PodMetrics.Metrics != nil {
+			metrics := instance.Status.MonitorResult.PodMetrics
+			// Find the objective metric record from trail status
+			if metrics.PodName == targetInferenceName {
+				return true
 			}
+
 		}
 	}
 	// Objective metric record Not found

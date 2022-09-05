@@ -60,7 +60,7 @@ type InferenceStatus struct {
 // MonitoringResult describes pod and node metrics.
 type MonitoringResult struct {
 	// Monitoring of pod metrics
-	PodMetrics []PodMetricSpec `json:"podMetrics,omitempty"`
+	PodMetrics PodMetricSpec `json:"podMetrics,omitempty"`
 
 	// Monitoring of node metrics
 	NodeMetrics []NodeMetricSpec `json:"nodeMetrics,omitempty"`
@@ -71,7 +71,7 @@ type PodMetricSpec struct {
 	//Name
 	PodName string `json:"podName"`
 	//Metrics
-	Metrics PodMetrics `json:"metrics"`
+	Metrics []PodMetrics `json:"metrics"`
 }
 
 // PodMetrics describes pod  metrics.

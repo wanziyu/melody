@@ -6026,9 +6026,9 @@ spec:
                       type: object
                     type: array
                   podMetrics:
-                    items:
-                      properties:
-                        metrics:
+                    properties:
+                      metrics:
+                        items:
                           properties:
                             category:
                               type: string
@@ -6038,13 +6038,13 @@ spec:
                           - category
                           - value
                           type: object
-                        podName:
-                          type: string
-                      required:
-                      - metrics
-                      - podName
-                      type: object
-                    type: array
+                        type: array
+                      podName:
+                        type: string
+                    required:
+                    - metrics
+                    - podName
+                    type: object
                 type: object
               servingStatuses:
                 items:

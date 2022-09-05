@@ -46,45 +46,35 @@ func (t InferenceDBClient) GetMonitorResult(inference *melodyiov1alpha1.Inferenc
 func validateDBResult(inference *melodyiov1alpha1.Inference, response []client.Result) *melodyiov1alpha1.MonitoringResult {
 
 	reply := &melodyiov1alpha1.MonitoringResult{}
-
-	reply.PodMetrics = make([]melodyiov1alpha1.PodMetricSpec, 0)
+	reply.PodMetrics.PodName = inference.Name
+	reply.PodMetrics.Metrics = make([]melodyiov1alpha1.PodMetrics, 0)
 	reply.NodeMetrics = make([]melodyiov1alpha1.NodeMetricSpec, 0)
 
 	if response != nil {
 		for _, row := range response[0].Series[0].Values {
-			reply.PodMetrics = append(reply.PodMetrics, melodyiov1alpha1.PodMetricSpec{
-				PodName: inference.Name,
-				Metrics: melodyiov1alpha1.PodMetrics{Category: melodyiov1alpha1.CPUUsage, Value: fmt.Sprintf("%v", row[1])},
+			reply.PodMetrics.Metrics = append(reply.PodMetrics.Metrics, melodyiov1alpha1.PodMetrics{
+				Category: melodyiov1alpha1.CPUUsage,
+				Value:    fmt.Sprintf("%v", row[1]),
 			})
 
-			reply.PodMetrics = append(reply.PodMetrics, melodyiov1alpha1.PodMetricSpec{
-				PodName: inference.Name,
-				Metrics: melodyiov1alpha1.PodMetrics{Category: melodyiov1alpha1.JobCompletionTime, Value: fmt.Sprintf("%v", row[3])},
+			reply.PodMetrics.Metrics = append(reply.PodMetrics.Metrics, melodyiov1alpha1.PodMetrics{
+				Category: melodyiov1alpha1.MemUsage,
+				Value:    fmt.Sprintf("%v", row[4]),
 			})
 
-			reply.PodMetrics = append(reply.PodMetrics, melodyiov1alpha1.PodMetricSpec{
-				PodName: inference.Name,
-				Metrics: melodyiov1alpha1.PodMetrics{Category: melodyiov1alpha1.MemUsage, Value: fmt.Sprintf("%v", row[4])},
+			reply.PodMetrics.Metrics = append(reply.PodMetrics.Metrics, melodyiov1alpha1.PodMetrics{
+				Category: melodyiov1alpha1.JobCompletionTime,
+				Value:    fmt.Sprintf("%v", row[3]),
 			})
 
 		}
 
 	} else {
 		log.Info("Get nil monitoring result of inference %s.%s, will save objective value as 0", inference.Name, inference.Namespace)
-		reply.PodMetrics = append(reply.PodMetrics, melodyiov1alpha1.PodMetricSpec{
-			PodName: inference.Name,
-			Metrics: melodyiov1alpha1.PodMetrics{Category: melodyiov1alpha1.CPUUsage, Value: defaultMetricValue},
-		})
-
-		reply.PodMetrics = append(reply.PodMetrics, melodyiov1alpha1.PodMetricSpec{
-			PodName: inference.Name,
-			Metrics: melodyiov1alpha1.PodMetrics{Category: melodyiov1alpha1.MemUsage, Value: defaultMetricValue},
-		})
-
-		reply.PodMetrics = append(reply.PodMetrics, melodyiov1alpha1.PodMetricSpec{
-			PodName: inference.Name,
-			Metrics: melodyiov1alpha1.PodMetrics{Category: melodyiov1alpha1.JobCompletionTime, Value: defaultMetricValue},
-		})
+		cpu := melodyiov1alpha1.PodMetrics{Category: melodyiov1alpha1.CPUUsage, Value: consts.DefaultMetricValue}
+		mem := melodyiov1alpha1.PodMetrics{Category: melodyiov1alpha1.MemUsage, Value: consts.DefaultMetricValue}
+		jct := melodyiov1alpha1.PodMetrics{Category: melodyiov1alpha1.JobCompletionTime, Value: consts.DefaultMetricValue}
+		reply.PodMetrics.Metrics = []melodyiov1alpha1.PodMetrics{cpu, mem, jct}
 
 		for _, node := range inference.Spec.OptionalNodes {
 			reply.NodeMetrics = append(reply.NodeMetrics, melodyiov1alpha1.NodeMetricSpec{
